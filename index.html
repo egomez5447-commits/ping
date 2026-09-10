@@ -122,6 +122,24 @@
   .pending img { width:44px; height:44px; object-fit:cover; border-radius:10px; }
   .pending button { margin-left:auto; background:none; border:0; color:#FF9B9B; }
 
+  .sheet { position:fixed; inset:0; z-index:65; background:rgba(6,4,12,.72); display:flex; align-items:flex-end; justify-content:center; }
+  .sheet .card { background:var(--panel); border:1px solid var(--line); border-radius:22px 22px 0 0; width:100%; max-width:520px; padding:18px 18px calc(18px + env(safe-area-inset-bottom)); max-height:88dvh; overflow-y:auto; }
+  .sheet h2 { margin:0 0 4px; font-size:21px; letter-spacing:-.3px; }
+  .sheet .lede { color:var(--mute); font-size:13.5px; margin:0 0 16px; }
+  .sheet label.cap { display:block; font-size:12px; color:var(--mute); margin:14px 0 6px; text-transform:uppercase; letter-spacing:.4px; }
+  .sheet select, .sheet .rowbtn { width:100%; padding:12px 13px; border-radius:13px; border:1px solid var(--line); background:var(--raised); }
+  .meter { height:12px; border-radius:8px; background:var(--raised); border:1px solid var(--line); overflow:hidden; margin-top:10px; }
+  .meter i { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--live),#7C5CFF); transition:width .08s linear; }
+  .hint { color:var(--mute); font-size:12.5px; margin:7px 0 0; }
+  .hint.good { color:var(--live); }
+  .hint.bad { color:var(--warn); }
+  .duo { display:flex; gap:8px; margin-top:10px; }
+  .duo button { flex:1; padding:12px; border-radius:13px; border:1px solid var(--line); background:var(--raised); }
+  .duo button.on { background:#2A2150; border-color:var(--accent); color:#C9BEFF; }
+  input[type=range] { width:100%; accent-color:var(--accent); }
+  .toggles { display:grid; gap:8px; margin-top:10px; }
+  .tg { display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:13px; border:1px solid var(--line); background:var(--raised); font-size:14px; }
+  .tg input { accent-color:var(--accent); width:18px; height:18px; }
   .toast { position:fixed; left:12px; right:12px; bottom:calc(96px + env(safe-area-inset-bottom)); z-index:60; background:var(--raised); border:1px solid #4A3E7A; border-radius:16px; padding:12px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 12px 40px rgba(0,0,0,.5); }
   .toast .t { flex:1; font-size:14px; }
   .toast button { border:0; border-radius:11px; padding:9px 13px; font-weight:600; }
@@ -182,6 +200,7 @@
     <div class="people" id="people"></div>
     <div class="foot">
       <button class="btn-ghost" id="invLink">Copy invite link</button>
+      <button class="btn-ghost" id="sndBtn">Sound check</button>
       <button class="btn-ghost" id="switch">Switch room</button>
       <button class="btn-ghost" id="out2">Change my name</button>
       <button class="btn-ghost danger" id="wipe">Delete my messages</button>
@@ -206,6 +225,9 @@
       <div class="vheads" id="vheads"></div>
       <button class="vbtn" id="muteBtn" aria-label="Mute">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+      </button>
+      <button class="vbtn" id="sndBtn2" aria-label="Sound check">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V7a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
       </button>
       <button class="vbtn leave" id="leaveVoice" aria-label="Leave voice">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9a13 13 0 0 1 18 0v3l-4 1-1-3a9 9 0 0 0-8 0l-1 3-4-1z"/></svg>
@@ -232,6 +254,39 @@
     </div>
   </div>
 </div>
+<div class="sheet hide" id="snd">
+  <div class="card">
+    <h2>Sound check</h2>
+    <p class="lede">Make sure people can hear you, and you can hear them.</p>
+
+    <label class="cap" for="inSel">Microphone</label>
+    <select id="inSel"></select>
+    <div class="meter"><i id="mFill"></i></div>
+    <p class="hint" id="mHint">Say something — the bar should move.</p>
+    <div class="duo">
+      <button id="monBtn">Hear myself</button>
+      <button id="testBtn">Play test sound</button>
+    </div>
+
+    <label class="cap" for="volRange">Volume of everyone else</label>
+    <input type="range" id="volRange" min="0" max="100" value="100">
+
+    <div id="outWrap">
+      <label class="cap" for="outSel">Speaker</label>
+      <select id="outSel"></select>
+    </div>
+
+    <label class="cap">Processing</label>
+    <div class="toggles">
+      <label class="tg"><input type="checkbox" id="ecChk" checked> Echo cancellation</label>
+      <label class="tg"><input type="checkbox" id="nsChk" checked> Noise suppression</label>
+    </div>
+    <p class="hint">Turn these off only if you're on headphones and want raw audio — music, for instance.</p>
+
+    <button class="btn-main" id="sndDone">Done</button>
+  </div>
+</div>
+<audio id="mon" class="hide"></audio>
 <input type="file" id="file" accept="image/*" class="hide">
 <div id="toasts"></div>
 
@@ -265,6 +320,16 @@ function loadSDK() {
   return sdkReady;
 }
 
+
+const BAKED_CFG = {
+  apiKey: "AIzaSyClx2nNs7fF2pDrc5Sqe1qKnURw_MgSUqs",
+  authDomain: "ping-chat-1b49f.firebaseapp.com",
+  databaseURL: "https://ping-chat-1b49f-default-rtdb.firebaseio.com",
+  projectId: "ping-chat-1b49f",
+  storageBucket: "ping-chat-1b49f.firebasestorage.app",
+  messagingSenderId: "683891959777",
+  appId: "1:683891959777:web:21e7d7f715461de13854a0"
+};
 
 const $ = id => document.getElementById(id);
 const HUES = [268,190,340,42,150,12,220,300];
@@ -312,7 +377,7 @@ function parseCfg(txt) {
   const m = txt.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('paste the whole firebaseConfig block, curly braces and all');
   const j = m[0]
-    .replace(/\/\/[^\n]*/g, '')
+    .replace(/(^|[\s,{])\/\/[^\n]*/g, '$1')
     .replace(/([{,]\s*)([A-Za-z0-9_$]+)\s*:/g, '$1"$2":')
     .replace(/'/g, '"')
     .replace(/,(\s*[}\]])/g, '$1');
@@ -331,12 +396,12 @@ $('saveCfg').onclick = async () => {
     const u = $('dburl').value.trim() || o.databaseURL;
     if (!u || !/^https:\/\//.test(u)) throw new Error('Add the Realtime Database URL — it starts with https://');
     o.databaseURL = u.replace(/\/+$/,'');
-    store.set('ping.cfg', JSON.stringify(o));
+    store.set('ping.cfg', JSON.stringify(o)); store.del('ping.reconfig');
     $('saveCfg').disabled = true; $('saveCfg').textContent = 'Connecting…';
     await boot(o);
   } catch (e) { showSetupError(e.message); }
 };
-$('reCfg').onclick = () => { store.del('ping.cfg'); location.hash = ''; location.reload(); };
+$('reCfg').onclick = () => { store.del('ping.cfg'); store.set('ping.reconfig','1'); location.hash = ''; location.reload(); };
 
 /* ================= boot ================= */
 function showSetupError(msg) {
@@ -463,7 +528,7 @@ $('switch').onclick = async () => { toggleDrawer(false); await leaveVoice(); awa
 
 $('invLink').onclick = async () => {
   const cfg = store.get('ping.cfg');
-  const url = location.origin + location.pathname + '#cfg=' + btoa(encodeURIComponent(cfg));
+  const url = location.origin + location.pathname + (BAKED_CFG ? '' : '#cfg=' + btoa(encodeURIComponent(cfg)));
   try { await navigator.clipboard.writeText(url); toast('Invite link copied. Text it to your friends — it sets them up automatically.'); }
   catch (e) { prompt('Copy this link and send it to your friends:', url); }
   toggleDrawer(false);
@@ -656,7 +721,7 @@ async function joinVoice() {
     return toast('This browser blocks microphone access here. Open the page directly in Safari or Chrome.');
   }
   try {
-    local = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
+    local = await getMic();
   } catch (e) {
     return toast(e.name === 'NotAllowedError'
       ? 'Microphone permission was denied. Allow it in your browser settings for this site, then tap Join voice again.'
@@ -703,6 +768,7 @@ function makePeer(uid) {
   const audio = document.createElement('audio');
   audio.autoplay = true; audio.playsInline = true; audio.className = 'hide';
   document.body.appendChild(audio);
+  applyOutput(audio);
   const st = { pc, audio, gotDesc: '', seen: new Set(), queue: [], meter: null };
   peers.set(uid, st);
   if (local) local.getTracks().forEach(t => pc.addTrack(t, local));
@@ -814,6 +880,200 @@ $('joinVoice').onclick = joinVoice;
 $('leaveVoice').onclick = leaveVoice;
 $('muteBtn').onclick = toggleMute;
 
+/* ================= sound check ================= */
+const prefs = Object.assign({ inId:'', outId:'', vol:1, ec:true, ns:true },
+  (() => { try { return JSON.parse(store.get('ping.audio') || '{}'); } catch (e) { return {}; } })());
+const savePrefs = () => store.set('ping.audio', JSON.stringify(prefs));
+const CAN_PICK_SPEAKER = typeof HTMLMediaElement !== 'undefined' && 'setSinkId' in HTMLMediaElement.prototype;
+
+function micConstraints() {
+  const a = { echoCancellation: prefs.ec, noiseSuppression: prefs.ns, autoGainControl: true };
+  if (prefs.inId) a.deviceId = { exact: prefs.inId };
+  return { audio: a };
+}
+async function getMic() {
+  try { return await navigator.mediaDevices.getUserMedia(micConstraints()); }
+  catch (e) {
+    if (prefs.inId) { prefs.inId = ''; savePrefs(); return navigator.mediaDevices.getUserMedia(micConstraints()); }
+    throw e;
+  }
+}
+function applyOutput(el) {
+  el.volume = prefs.vol;
+  if (CAN_PICK_SPEAKER && prefs.outId) el.setSinkId(prefs.outId).catch(()=>{});
+}
+function applyOutputAll() {
+  for (const st of peers.values()) if (st.audio) applyOutput(st.audio);
+}
+function makeMeter(stream) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const an = audioCtx.createAnalyser(); an.fftSize = 512;
+    audioCtx.createMediaStreamSource(stream).connect(an);
+    const buf = new Uint8Array(an.frequencyBinCount);
+    return () => { an.getByteFrequencyData(buf); let s = 0; for (const v of buf) s += v; return s / buf.length; };
+  } catch (e) { return null; }
+}
+
+let testStream = null, sndRAF = null, sndMeter = null, peak = 0, toneUrl = null;
+
+function toneURL() {
+  if (toneUrl) return toneUrl;
+  const sr = 44100, len = Math.floor(sr * 0.55), buf = new ArrayBuffer(44 + len*2), v = new DataView(buf);
+  const W = (o, str) => { for (let i = 0; i < str.length; i++) v.setUint8(o+i, str.charCodeAt(i)); };
+  W(0,'RIFF'); v.setUint32(4, 36+len*2, true); W(8,'WAVEfmt '); v.setUint32(16, 16, true);
+  v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,sr,true);
+  v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true);
+  W(36,'data'); v.setUint32(40, len*2, true);
+  for (let i = 0; i < len; i++) {
+    const t = i/sr, env = Math.max(0, Math.min(1, t*25, (0.55-t)*8));
+    const y = (Math.sin(2*Math.PI*523.25*t) * 0.55 + Math.sin(2*Math.PI*783.99*t) * 0.3) * env;
+    v.setInt16(44+i*2, Math.max(-1, Math.min(1, y)) * 32767, true);
+  }
+  toneUrl = URL.createObjectURL(new Blob([buf], { type:'audio/wav' }));
+  return toneUrl;
+}
+
+async function fillDevices() {
+  let list = [];
+  try { list = await navigator.mediaDevices.enumerateDevices(); } catch (e) {}
+  const ins = list.filter(d => d.kind === 'audioinput');
+  const outs = list.filter(d => d.kind === 'audiooutput');
+  $('inSel').innerHTML = ins.length
+    ? ins.map((d,i) => `<option value="${d.deviceId}"${d.deviceId===prefs.inId?' selected':''}>${esc(d.label || 'Microphone ' + (i+1))}</option>`).join('')
+    : '<option value="">Default microphone</option>';
+  if (CAN_PICK_SPEAKER && outs.length) {
+    $('outWrap').classList.remove('hide');
+    $('outSel').innerHTML = outs.map((d,i) => `<option value="${d.deviceId}"${d.deviceId===prefs.outId?' selected':''}>${esc(d.label || 'Speaker ' + (i+1))}</option>`).join('');
+  } else {
+    $('outWrap').classList.add('hide');
+  }
+}
+
+async function openSound() {
+  toggleDrawer(false);
+  $('snd').classList.remove('hide');
+  $('volRange').value = Math.round(prefs.vol * 100);
+  $('ecChk').checked = prefs.ec;
+  $('nsChk').checked = prefs.ns;
+  $('mHint').className = 'hint';
+  $('mHint').textContent = 'Say something — the bar should move.';
+  peak = 0;
+
+  if (!local) {
+    try { testStream = await getMic(); }
+    catch (e) {
+      $('mHint').className = 'hint bad';
+      $('mHint').textContent = e.name === 'NotAllowedError'
+        ? 'Microphone permission is off for this site. Turn it on in your browser settings.'
+        : 'No microphone available: ' + e.name;
+    }
+  }
+  await fillDevices();
+  const src = local || testStream;
+  sndMeter = src ? makeMeter(src) : null;
+  if ($('mon').srcObject !== src) $('mon').srcObject = src || null;
+  tickMeter();
+}
+
+function tickMeter() {
+  cancelAnimationFrame(sndRAF);
+  const step = () => {
+    if ($('snd').classList.contains('hide')) return;
+    const lvl = sndMeter ? sndMeter() : 0;
+    $('mFill').style.width = Math.min(100, lvl * 2.2) + '%';
+    if (lvl > peak) peak = lvl;
+    if (peak > 10 && !$('mHint').classList.contains('good')) {
+      $('mHint').className = 'hint good';
+      $('mHint').textContent = "That's picking you up clearly.";
+    }
+    sndRAF = requestAnimationFrame(step);
+  };
+  step();
+}
+
+function closeSound() {
+  $('snd').classList.add('hide');
+  cancelAnimationFrame(sndRAF);
+  stopMonitor();
+  if (testStream) { testStream.getTracks().forEach(t => t.stop()); testStream = null; }
+  sndMeter = null;
+}
+
+function stopMonitor() {
+  const m = $('mon');
+  m.pause(); m.srcObject = null;
+  $('monBtn').classList.remove('on');
+  $('monBtn').textContent = 'Hear myself';
+}
+
+$('monBtn').onclick = () => {
+  const m = $('mon');
+  if ($('monBtn').classList.contains('on')) return stopMonitor();
+  const src = local || testStream;
+  if (!src) return;
+  m.srcObject = src; m.volume = prefs.vol; m.muted = false;
+  m.play().catch(()=>{});
+  $('monBtn').classList.add('on');
+  $('monBtn').textContent = 'Stop';
+  toast('Use headphones for this, or it will screech.');
+};
+
+$('testBtn').onclick = () => {
+  const a = new Audio(toneURL());
+  applyOutput(a);
+  a.play().catch(() => toast('Your browser blocked the test sound. Tap the screen once and try again.'));
+};
+
+$('volRange').oninput = e => {
+  prefs.vol = e.target.value / 100; savePrefs();
+  applyOutputAll();
+  $('mon').volume = prefs.vol;
+};
+
+$('inSel').onchange = async e => {
+  prefs.inId = e.target.value; savePrefs();
+  try {
+    const fresh = await getMic();
+    if (inVoice) {
+      const track = fresh.getAudioTracks()[0];
+      track.enabled = !muted;
+      for (const st of peers.values()) {
+        const sender = st.pc.getSenders().find(x => x.track && x.track.kind === 'audio');
+        if (sender) await sender.replaceTrack(track);
+      }
+      if (local) local.getTracks().forEach(t => t.stop());
+      local = fresh;
+      myMeter = makeMeter(local);
+    } else {
+      if (testStream) testStream.getTracks().forEach(t => t.stop());
+      testStream = fresh;
+    }
+    const src = local || testStream;
+    sndMeter = makeMeter(src);
+    peak = 0;
+    $('mHint').className = 'hint';
+    $('mHint').textContent = 'Say something — the bar should move.';
+    if ($('monBtn').classList.contains('on')) { $('mon').srcObject = src; $('mon').play().catch(()=>{}); }
+    await fillDevices();
+  } catch (err) { toast("Couldn't switch to that microphone: " + err.name); }
+};
+
+$('outSel').onchange = e => { prefs.outId = e.target.value; savePrefs(); applyOutputAll(); };
+
+$('ecChk').onchange = e => { prefs.ec = e.target.checked; savePrefs(); reprocess(); };
+$('nsChk').onchange = e => { prefs.ns = e.target.checked; savePrefs(); reprocess(); };
+async function reprocess() {
+  if (!local && !testStream) return;
+  await $('inSel').onchange({ target: { value: prefs.inId } });
+}
+
+$('sndDone').onclick = closeSound;
+$('snd').onclick = e => { if (e.target === $('snd')) closeSound(); };
+$('sndBtn').onclick = openSound;
+$('sndBtn2').onclick = openSound;
+
 /* ================= wiring ================= */
 const box = $('box');
 box.oninput = () => {
@@ -862,7 +1122,8 @@ window.addEventListener('unhandledrejection', e => {
     try { const cfg = decodeURIComponent(atob(hash[1])); store.set('ping.cfg', cfg); history.replaceState(null, '', location.pathname); } catch (e) {}
   }
   const saved = store.get('ping.cfg');
-  if (saved) { try { boot(JSON.parse(saved)); return; } catch (e) {} }
+  if (saved && store.get('ping.reconfig') !== '1') { try { boot(JSON.parse(saved)); return; } catch (e) {} }
+  if (BAKED_CFG && store.get('ping.reconfig') !== '1') { boot(BAKED_CFG); return; }
 })();
 </script>
 </body>
