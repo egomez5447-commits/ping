@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<meta name="theme-color" content="#100E17">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Ping</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin:0; padding:0; height:100%; overscroll-behavior:none; }
+  body {
+    --bg:#100E17; --panel:#1A1724; --raised:#241F33; --line:#322B45;
+    --ink:#EFEBF7; --mute:#948CAC; --accent:#7C5CFF; --live:#3ED598; --warn:#FF6B6B;
+    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+    color:var(--ink); background:var(--bg); height:100dvh; display:flex; flex-direction:column;
+    overflow:hidden; position:relative; font-size:15px; line-height:1.45;
+  }
+  button, input, textarea { font:inherit; color:inherit; }
+  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  .hide { display:none !important; }
+
+  .gate { position:fixed; inset:0; z-index:40; background:var(--bg); display:flex; flex-direction:column; justify-content:center; padding:26px 22px calc(26px + env(safe-area-inset-bottom)); overflow-y:auto; }
+  .gate.top { justify-content:flex-start; padding-top:calc(24px + env(safe-area-inset-top)); }
+  .mark { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
+  .dot-live { width:11px; height:11px; border-radius:50%; background:var(--live); box-shadow:0 0 0 0 rgba(62,213,152,.55); animation:pulse 2.4s infinite; }
+  @keyframes pulse { 70%{box-shadow:0 0 0 12px rgba(62,213,152,0);} 100%{box-shadow:0 0 0 0 rgba(62,213,152,0);} }
+  h1 { margin:0; font-size:32px; letter-spacing:-.5px; font-weight:800; }
+  p.sub { margin:2px 0 20px; color:var(--mute); max-width:36ch; }
+  .tabs { display:flex; gap:6px; background:var(--panel); padding:5px; border-radius:14px; margin-bottom:18px; }
+  .tabs button { flex:1; padding:10px; border:0; background:transparent; border-radius:10px; color:var(--mute); font-weight:600; }
+  .tabs button.on { background:var(--raised); color:var(--ink); }
+  .field { margin-bottom:13px; }
+  .field label { display:block; font-size:13px; color:var(--mute); margin-bottom:6px; }
+  .field input, .field textarea { width:100%; padding:14px 15px; border-radius:14px; border:1px solid var(--line); background:var(--panel); }
+  .field textarea { min-height:130px; resize:vertical; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; }
+  .field input::placeholder, .field textarea::placeholder { color:#5D5573; }
+  .btn-main { width:100%; padding:15px; border-radius:14px; border:0; background:var(--accent); color:#fff; font-weight:700; margin-top:6px; }
+  .btn-main:disabled { opacity:.5; }
+  .err { color:#FF9B9B; font-size:13.5px; min-height:20px; margin-top:8px; }
+  .fineprint { color:#6E6689; font-size:12.5px; margin-top:14px; line-height:1.5; }
+  .swatches { display:flex; gap:8px; margin-bottom:14px; }
+  .swatches button { width:34px; height:34px; border-radius:11px; border:2px solid transparent; }
+  .swatches button.on { border-color:#fff; }
+  .steps { counter-reset:s; margin:0 0 20px; padding:0; list-style:none; }
+  .steps li { counter-increment:s; position:relative; padding:0 0 14px 34px; color:var(--mute); font-size:14px; }
+  .steps li::before { content:counter(s); position:absolute; left:0; top:0; width:24px; height:24px; border-radius:8px; background:var(--raised); border:1px solid var(--line); color:var(--ink); display:grid; place-items:center; font-size:12.5px; font-weight:700; }
+  .steps li b { color:var(--ink); font-weight:600; }
+  .steps code { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:1px 5px; font-size:12.5px; }
+
+  .topbar { display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 12px 10px; border-bottom:1px solid var(--line); background:var(--panel); flex:0 0 auto; }
+  .icobtn { background:var(--raised); border:1px solid var(--line); border-radius:11px; width:38px; height:38px; display:grid; place-items:center; flex:0 0 auto; }
+  .roomname { font-weight:700; letter-spacing:-.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .roommeta { font-size:12px; color:var(--mute); }
+  .status { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--mute); background:none; border:0; }
+  .status i { width:8px; height:8px; border-radius:50%; background:var(--live); display:block; }
+  .status.off i { background:var(--warn); }
+
+  .scrim { position:fixed; inset:0; background:rgba(8,6,14,.6); z-index:20; opacity:0; pointer-events:none; transition:opacity .18s; }
+  .scrim.on { opacity:1; pointer-events:auto; }
+  .drawer { position:fixed; top:0; bottom:0; left:0; width:285px; max-width:85%; background:var(--panel); border-right:1px solid var(--line); z-index:30; transform:translateX(-102%); transition:transform .2s ease; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top); }
+  .drawer.on { transform:none; }
+  .drawer h3 { font-size:12px; color:var(--mute); font-weight:600; margin:16px 16px 8px; }
+  .people { overflow-y:auto; flex:1; padding-bottom:10px; }
+  .person { display:flex; align-items:center; gap:10px; padding:7px 14px; }
+  .person .nm { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
+  .person .tag { font-size:11px; color:var(--mute); }
+  .invite { border:1px solid var(--line); background:var(--raised); border-radius:9px; padding:5px 9px; font-size:12px; color:#C9BEFF; }
+  .av { width:32px; height:32px; border-radius:11px; display:grid; place-items:center; font-size:13px; font-weight:800; color:#120F1A; flex:0 0 auto; position:relative; }
+  .person .av::after { content:''; position:absolute; right:-2px; bottom:-2px; width:10px; height:10px; border-radius:50%; background:var(--live); border:2px solid var(--panel); }
+  .drawer .foot { border-top:1px solid var(--line); padding:12px calc(12px) calc(12px + env(safe-area-inset-bottom)); display:grid; gap:8px; }
+  .btn-ghost { padding:11px; border-radius:12px; background:var(--raised); border:1px solid var(--line); text-align:left; }
+  .btn-ghost.danger { color:#FF9B9B; }
+
+  .voicebar { background:linear-gradient(180deg,#221C3D,#1C1830); border-bottom:1px solid var(--line); padding:10px 12px; display:flex; align-items:center; gap:10px; flex:0 0 auto; }
+  .vheads { display:flex; gap:7px; flex:1; overflow-x:auto; }
+  .vhead { text-align:center; width:46px; flex:0 0 auto; }
+  .vhead .av { width:38px; height:38px; border-radius:13px; margin:0 auto; box-shadow:0 0 0 0 rgba(62,213,152,.7); transition:box-shadow .12s; }
+  .vhead.talk .av { box-shadow:0 0 0 3px rgba(62,213,152,.85); }
+  .vhead small { display:block; font-size:10.5px; color:var(--mute); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vhead .m { position:absolute; right:-4px; bottom:-4px; background:var(--warn); width:16px; height:16px; border-radius:50%; display:grid; place-items:center; font-size:9px; }
+  .vbtn { border-radius:12px; padding:10px 12px; background:var(--raised); border:1px solid var(--line); flex:0 0 auto; display:grid; place-items:center; }
+  .vbtn.on { background:var(--warn); border-color:var(--warn); color:#fff; }
+  .vbtn.leave { background:#3A1F2B; border-color:#5A2C3D; color:#FF9B9B; }
+  .joinvoice { display:flex; align-items:center; gap:10px; padding:9px 12px; background:#1E1A2E; border-bottom:1px solid var(--line); flex:0 0 auto; font-size:13.5px; color:var(--mute); }
+  .joinvoice button { margin-left:auto; background:var(--accent); border:0; color:#fff; padding:8px 14px; border-radius:11px; font-weight:600; }
+
+  .stream { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 12px 4px; }
+  .daymark { text-align:center; color:#6E6689; font-size:12px; margin:12px 0; }
+  .msg { display:flex; gap:10px; margin-bottom:12px; }
+  .msg.stack { margin-top:-6px; }
+  .msg.stack .av { visibility:hidden; height:0; }
+  .body { min-width:0; flex:1; }
+  .who { display:flex; align-items:baseline; gap:8px; margin-bottom:1px; }
+  .who b { font-size:14.5px; }
+  .who span { font-size:11.5px; color:#6E6689; }
+  .bubble { background:var(--raised); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:8px 12px; display:inline-block; max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; }
+  .msg.mine .bubble { background:#2C2350; border-color:#3E3270; }
+  .msg.stack .bubble { border-radius:14px; }
+  .bubble a { color:#B7A6FF; }
+  .photo { border-radius:14px; overflow:hidden; border:1px solid var(--line); max-width:min(260px,72vw); background:#1A1724; }
+  .photo img { display:block; width:100%; height:auto; }
+  .photo img.ph { filter:blur(8px); }
+  .photo .cap { padding:7px 10px; font-size:13.5px; }
+  .reacts { display:flex; gap:5px; flex-wrap:wrap; margin-top:5px; }
+  .react { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:2px 9px; font-size:12.5px; }
+  .react.on { border-color:var(--accent); background:#2A2150; }
+  .picker { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
+  .picker button { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:4px 8px; font-size:16px; }
+  .empty { color:var(--mute); text-align:center; padding:40px 24px; }
+  .empty b { display:block; color:var(--ink); margin-bottom:6px; font-size:16px; }
+
+  .typing { height:18px; padding:0 16px 2px; font-size:12px; color:var(--mute); flex:0 0 auto; }
+  .composer { display:flex; gap:8px; align-items:flex-end; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--panel); flex:0 0 auto; }
+  .composer textarea { flex:1; resize:none; max-height:120px; padding:11px 14px; border-radius:18px; border:1px solid var(--line); background:var(--raised); }
+  .circ { width:44px; height:44px; border-radius:50%; border:0; display:grid; place-items:center; flex:0 0 auto; }
+  .circ.pic { background:var(--raised); border:1px solid var(--line); }
+  .circ.send { background:var(--accent); color:#fff; }
+  .circ:disabled { opacity:.35; }
+  .pending { display:flex; align-items:center; gap:10px; padding:8px 12px; border-top:1px solid var(--line); background:var(--panel); font-size:13px; color:var(--mute); }
+  .pending img { width:44px; height:44px; object-fit:cover; border-radius:10px; }
+  .pending button { margin-left:auto; background:none; border:0; color:#FF9B9B; }
+
+  .toast { position:fixed; left:12px; right:12px; bottom:calc(96px + env(safe-area-inset-bottom)); z-index:60; background:var(--raised); border:1px solid #4A3E7A; border-radius:16px; padding:12px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 12px 40px rgba(0,0,0,.5); }
+  .toast .t { flex:1; font-size:14px; }
+  .toast button { border:0; border-radius:11px; padding:9px 13px; font-weight:600; }
+  .toast .yes { background:var(--accent); color:#fff; }
+  .toast .no { background:transparent; color:var(--mute); }
+  .lightbox { position:fixed; inset:0; z-index:70; background:rgba(6,4,12,.94); display:grid; place-items:center; padding:16px; }
+  .lightbox img { max-width:100%; max-height:86dvh; border-radius:12px; }
+
+  .row { display:flex; flex:1; min-height:0; }
+  .col { display:flex; flex-direction:column; flex:1; min-width:0; }
+  @media (min-width:760px) {
+    .drawer { transform:none; position:static; }
+    .scrim { display:none; }
+    .icobtn.menu { display:none; }
+  }
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div class="gate top" id="gSetup">
+  <div class="mark"><span class="dot-live"></span><span style="color:var(--mute);font-size:13px">one-time setup</span></div>
+  <h1>Connect Ping</h1>
+  <p class="sub">Ping needs a free Firebase project to carry messages between phones. Takes about five minutes, once.</p>
+  <ol class="steps">
+    <li>Go to <b>console.firebase.google.com</b> and tap <b>Create a project</b>. Any name. Skip Analytics.</li>
+    <li>Open <b>Build → Authentication → Get started</b>, scroll to <b>Anonymous</b>, turn it on, and save.</li>
+    <li>Open <b>Build → Realtime Database → Create database</b>. Choose <b>Start in test mode</b>.</li>
+    <li>In <b>Project settings → Your apps</b>, tap the <b>&lt;/&gt;</b> web icon, register the app, and copy the <code>firebaseConfig</code> block it shows you.</li>
+    <li>Paste it below.</li>
+  </ol>
+  <div class="field"><label for="cfg">Your firebaseConfig</label><textarea id="cfg" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;...&quot;,&#10;  authDomain: &quot;...&quot;,&#10;  projectId: &quot;...&quot;&#10;};" spellcheck="false" autocapitalize="off"></textarea></div>
+  <div class="field"><label for="dburl">Realtime Database URL</label><input id="dburl" placeholder="https://your-project-default-rtdb.firebaseio.com" spellcheck="false" autocapitalize="off"></div>
+  <button class="btn-main" id="saveCfg">Connect</button>
+  <div class="err" id="cerr"></div>
+  <p class="fineprint">Firebase web keys are public by design — they identify your project, they don't unlock it. Your database rules are what protect the data.</p>
+</div>
+
+<!-- JOIN -->
+<div class="gate hide" id="gRoom">
+  <div class="mark"><span class="dot-live"></span><span style="color:var(--mute);font-size:13px" id="hello">no sign-up, no password</span></div>
+  <h1>Ping</h1>
+  <p class="sub">Type a code, pick a name, start talking. Everyone with the same code lands in the same room.</p>
+  <div class="field"><label for="rm">Room code</label><input id="rm" maxlength="24" placeholder="friday-crew" autocapitalize="off" autocomplete="off"></div>
+  <div class="field"><label for="ad">Show up as</label><input id="ad" maxlength="18" placeholder="Marcus"></div>
+  <label style="display:block;font-size:13px;color:var(--mute);margin-bottom:6px">Avatar colour</label>
+  <div class="swatches" id="sw"></div>
+  <button class="btn-main" id="enterRoom">Join room</button>
+  <div class="err" id="rerr"></div>
+  <button class="btn-ghost" id="reCfg" style="margin-top:16px;text-align:center">Change Firebase project</button>
+  <p class="fineprint">Anyone with the code can walk into the room, so pick something only your friends would guess.</p>
+</div>
+
+<div class="row">
+  <div class="scrim" id="scrim"></div>
+  <aside class="drawer" id="drawer">
+    <h3 id="cnt">In the room</h3>
+    <div class="people" id="people"></div>
+    <div class="foot">
+      <button class="btn-ghost" id="invLink">Copy invite link</button>
+      <button class="btn-ghost" id="switch">Switch room</button>
+      <button class="btn-ghost" id="out2">Change my name</button>
+      <button class="btn-ghost danger" id="wipe">Delete my messages</button>
+    </div>
+  </aside>
+
+  <div class="col">
+    <header class="topbar">
+      <button class="icobtn menu" id="menu" aria-label="Show people">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+      </button>
+      <div style="min-width:0">
+        <div class="roomname" id="rtitle">room</div>
+        <div class="roommeta" id="rmeta">connecting…</div>
+      </div>
+      <button class="status" id="stat"><i></i><span>Live</span></button>
+    </header>
+
+    <div class="joinvoice hide" id="jv"><span id="jvtxt">Voice channel is empty</span><button id="joinVoice">Join voice</button></div>
+
+    <div class="voicebar hide" id="vbar">
+      <div class="vheads" id="vheads"></div>
+      <button class="vbtn" id="muteBtn" aria-label="Mute">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
+      </button>
+      <button class="vbtn leave" id="leaveVoice" aria-label="Leave voice">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9a13 13 0 0 1 18 0v3l-4 1-1-3a9 9 0 0 0-8 0l-1 3-4-1z"/></svg>
+      </button>
+    </div>
+
+    <div class="stream" id="stream"></div>
+    <div class="typing" id="typing"></div>
+
+    <div class="pending hide" id="pend">
+      <img id="pendImg" alt="">
+      <span id="pendTxt">Photo ready</span>
+      <button id="pendX">Remove</button>
+    </div>
+
+    <div class="composer">
+      <button class="circ pic" id="pic" aria-label="Send a photo">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5-6 6"/></svg>
+      </button>
+      <textarea id="box" rows="1" placeholder="Message the room" enterkeyhint="send"></textarea>
+      <button class="circ send" id="send" disabled aria-label="Send">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 8 6 8z"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+<input type="file" id="file" accept="image/*" class="hide">
+<div id="toasts"></div>
+
+<script type="module">
+let initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
+    getDatabase, ref, push, set, update, remove, get, onValue,
+    onChildAdded, onChildRemoved, onDisconnect, query, limitToLast, serverTimestamp;
+
+let sdkReady = null;
+function loadSDK() {
+  if (sdkReady) return sdkReady;
+  sdkReady = (async () => {
+    let last = null;
+    for (const v of ['10.12.2', '10.14.1', '11.0.2', '9.23.0']) {
+      try {
+        const base = `https://www.gstatic.com/firebasejs/${v}/`;
+        const [a, au, d] = await Promise.all([
+          import(base + 'firebase-app.js'),
+          import(base + 'firebase-auth.js'),
+          import(base + 'firebase-database.js')
+        ]);
+        ({ initializeApp } = a);
+        ({ getAuth, signInAnonymously, onAuthStateChanged } = au);
+        ({ getDatabase, ref, push, set, update, remove, get, onValue,
+           onChildAdded, onChildRemoved, onDisconnect, query, limitToLast, serverTimestamp } = d);
+        return v;
+      } catch (e) { last = e; sdkReady = null; }
+    }
+    throw new Error("Couldn't download Firebase. Check your internet, then reload. (" + (last && last.message) + ")");
+  })();
+  return sdkReady;
+}
+
+
+const $ = id => document.getElementById(id);
+const HUES = [268,190,340,42,150,12,220,300];
+const EMOJI = ['👍','😂','🔥','❤️','💀','👀'];
+const RTC = { iceServers: [
+  { urls: 'stun:stun.l.google.com:19302' },
+  { urls: 'stun:stun1.l.google.com:19302' },
+  { urls: 'stun:global.stun.twilio.com:3478' }
+]};
+
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const slug = s => (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,24);
+const initials = n => (n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '?';
+const clock = t => new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
+const link = t => esc(t).replace(/(https?:\/\/[^\s<]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch (e) { return sessionMem[k] || null; } },
+  set(k,v) { try { localStorage.setItem(k,v); } catch (e) { sessionMem[k] = v; } },
+  del(k) { try { localStorage.removeItem(k); } catch (e) { delete sessionMem[k]; } }
+};
+const sessionMem = {};
+
+let db = null, auth = null, me = null, room = '';
+let msgs = new Map(), reacts = {}, presence = {}, imgCache = new Map(), fetching = new Set();
+let unsubs = [], openMsg = null, pending = null, typingUntil = 0, lastCount = 0, drewOnce = false;
+let local = null, inVoice = false, muted = false, audioCtx = null, levelTimer = null, myMeter = null;
+const peers = new Map();
+
+/* ================= toasts ================= */
+function toast(text, onYes, yesLabel) {
+  const el = document.createElement('div');
+  el.className = 'toast';
+  el.innerHTML = `<span class="t">${esc(text)}</span>` +
+    (onYes ? `<button class="yes">${esc(yesLabel||'OK')}</button><button class="no">Later</button>`
+           : `<button class="no">Close</button>`);
+  $('toasts').appendChild(el);
+  const kill = () => el.remove();
+  el.querySelector('.no').onclick = kill;
+  if (onYes) el.querySelector('.yes').onclick = () => { kill(); onYes(); };
+  setTimeout(kill, onYes ? 25000 : 6500);
+}
+
+/* ================= config ================= */
+function parseCfg(txt) {
+  const m = txt.match(/\{[\s\S]*\}/);
+  if (!m) throw new Error('paste the whole firebaseConfig block, curly braces and all');
+  const j = m[0]
+    .replace(/\/\/[^\n]*/g, '')
+    .replace(/([{,]\s*)([A-Za-z0-9_$]+)\s*:/g, '$1"$2":')
+    .replace(/'/g, '"')
+    .replace(/,(\s*[}\]])/g, '$1');
+  const o = JSON.parse(j);
+  if (!o.apiKey || !o.projectId) throw new Error('that block is missing apiKey or projectId');
+  return o;
+}
+$('cfg').addEventListener('input', () => {
+  if ($('dburl').value.trim()) return;
+  try { const o = parseCfg($('cfg').value); $('dburl').value = o.databaseURL || `https://${o.projectId}-default-rtdb.firebaseio.com`; } catch (e) {}
+});
+$('saveCfg').onclick = async () => {
+  $('cerr').textContent = '';
+  try {
+    const o = parseCfg($('cfg').value);
+    const u = $('dburl').value.trim() || o.databaseURL;
+    if (!u || !/^https:\/\//.test(u)) throw new Error('Add the Realtime Database URL — it starts with https://');
+    o.databaseURL = u.replace(/\/+$/,'');
+    store.set('ping.cfg', JSON.stringify(o));
+    $('saveCfg').disabled = true; $('saveCfg').textContent = 'Connecting…';
+    await boot(o);
+  } catch (e) { showSetupError(e.message); }
+};
+$('reCfg').onclick = () => { store.del('ping.cfg'); location.hash = ''; location.reload(); };
+
+/* ================= boot ================= */
+function showSetupError(msg) {
+  $('gSetup').classList.remove('hide');
+  $('cerr').textContent = msg;
+  $('saveCfg').disabled = false;
+  $('saveCfg').textContent = 'Connect';
+  $('cerr').scrollIntoView({ block: 'center', behavior: 'smooth' });
+  toast(msg);
+}
+
+async function boot(cfg) {
+  try { await loadSDK(); }
+  catch (e) { return showSetupError(e.message); }
+  try {
+    const app = initializeApp(cfg);
+    auth = getAuth(app);
+    db = getDatabase(app);
+  } catch (e) { return showSetupError('Firebase rejected that config: ' + e.message); }
+
+  $('gSetup').classList.add('hide');
+  onAuthStateChanged(auth, user => {
+    if (!user) { me = null; return; }
+    me = { uid: user.uid, name: store.get('ping.name') || pickName(), hue: +(store.get('ping.hue') || HUES[0]) };
+    $('ad').value = me.name;
+    setHue(me.hue);
+    $('gRoom').classList.remove('hide');
+    const last = store.get('ping.room'); if (last) $('rm').value = last;
+  });
+  try {
+    await signInAnonymously(auth);
+  } catch (e) {
+    const c = String(e.code || '');
+    return showSetupError(
+      c.includes('operation-not-allowed')
+        ? 'Almost there — Anonymous sign-in is still off. Firebase console → Authentication → Sign-in method → Anonymous → Enable, then tap Connect again.'
+      : c.includes('api-key-not-valid') || c.includes('invalid-api-key')
+        ? 'That apiKey was mistyped. Use the copy button in the Firebase console and paste it again.'
+      : c.includes('configuration-not-found')
+        ? 'No sign-in method is switched on yet. Firebase console → Authentication → Get started → Anonymous → Enable.'
+        : 'Firebase sign-in failed: ' + (e.message || c));
+  }
+  onValue(ref(db, '.info/connected'), s => setStat(!!s.val()));
+}
+function setStat(ok) {
+  const el = $('stat');
+  el.classList.toggle('off', !ok);
+  el.lastElementChild.textContent = ok ? 'Live' : 'Offline';
+}
+$('stat').onclick = () => toast(navigator.onLine ? 'Connected to your Firebase project.' : 'Your phone is offline — messages will send when you reconnect.');
+
+/* ================= identity ================= */
+const NAMES = ['Comet','Rider','Pixel','Blaze','Nova','Echo','Drift','Wolf','Neon','Ghost','Ace','Zip'];
+let pickHue = HUES[0];
+const pickName = () => NAMES[Math.floor(Math.random()*NAMES.length)] + Math.floor(10 + Math.random()*89);
+function setHue(h) {
+  pickHue = h;
+  [...$('sw').children].forEach(c => c.classList.toggle('on', +c.dataset.hue === h));
+}
+$('sw').innerHTML = HUES.map(h => `<button data-hue="${h}" style="background:hsl(${h} 70% 62%)"></button>`).join('');
+setHue(pickHue);
+$('sw').onclick = e => { const b = e.target.closest('[data-hue]'); if (b) setHue(+b.dataset.hue); };
+
+$('out2').onclick = () => {
+  const n = prompt('Show up as', me.name);
+  if (n && n.trim()) {
+    me.name = n.trim().slice(0,18);
+    store.set('ping.name', me.name);
+    if (room) update(R(`presence/${me.uid}`), { name: me.name }).catch(()=>{});
+  }
+  toggleDrawer(false);
+};
+
+/* ================= room ================= */
+function R(p) { return ref(db, `rooms/${room}/${p}`); }
+
+async function exitRoom() {
+  unsubs.forEach(f => { try { f(); } catch (e) {} });
+  unsubs = [];
+  if (room && me) { try { await remove(R(`presence/${me.uid}`)); } catch (e) {} }
+  msgs = new Map(); reacts = {}; presence = {}; lastCount = 0; drewOnce = false;
+}
+
+$('enterRoom').onclick = async () => {
+  const c = slug($('rm').value);
+  if (!c) { $('rerr').textContent = 'Give the room a code — letters and numbers.'; return; }
+  const nm = $('ad').value.trim().slice(0,18);
+  if (nm) { me.name = nm; store.set('ping.name', nm); }
+  me.hue = pickHue; store.set('ping.hue', String(pickHue));
+  $('rerr').textContent = ''; $('enterRoom').disabled = true; $('enterRoom').textContent = 'Joining…';
+  try { await enterRoom(c); }
+  catch (e) { $('rerr').textContent = 'Firebase refused: ' + (e.message || e); }
+  $('enterRoom').disabled = false; $('enterRoom').textContent = 'Join room';
+};
+$('rm').onkeydown = e => { if (e.key === 'Enter') $('enterRoom').click(); };
+
+async function enterRoom(code) {
+  await exitRoom();
+  room = code;
+  store.set('ping.room', room);
+  $('rtitle').textContent = '#' + room;
+  $('gRoom').classList.add('hide');
+
+  const pRef = R(`presence/${me.uid}`);
+  await set(pRef, { name: me.name, hue: me.hue, uid: me.uid, typing: 0, voice: { in:false, muted:false }, at: serverTimestamp() });
+  onDisconnect(pRef).remove();
+  onDisconnect(R(`signals/${me.uid}`)).remove();
+
+  const mq = query(R('messages'), limitToLast(300));
+  unsubs.push(onChildAdded(mq, s => { msgs.set(s.key, { id:s.key, ...s.val() }); draw(); }));
+  unsubs.push(onChildRemoved(R('messages'), s => { msgs.delete(s.key); lastCount = 0; draw(); }));
+  unsubs.push(onValue(R('reacts'), s => { reacts = s.val() || {}; draw(); }));
+  unsubs.push(onValue(R('presence'), s => { presence = s.val() || {}; syncVoicePeers(); draw(); }));
+  unsubs.push(onChildAdded(R(`invites/${me.uid}`), s => {
+    const v = s.val() || {};
+    remove(s.ref);
+    if (Date.now() - (v.t || 0) < 90000 && !inVoice) toast(`${v.name} invited you to voice.`, joinVoice, 'Join');
+  }));
+  unsubs.push(onValue(R(`signals/${me.uid}`), s => handleSignals(s.val() || {})));
+  draw();
+}
+
+$('switch').onclick = async () => { toggleDrawer(false); await leaveVoice(); await exitRoom(); $('rm').value = room; $('gRoom').classList.remove('hide'); };
+
+$('invLink').onclick = async () => {
+  const cfg = store.get('ping.cfg');
+  const url = location.origin + location.pathname + '#cfg=' + btoa(encodeURIComponent(cfg));
+  try { await navigator.clipboard.writeText(url); toast('Invite link copied. Text it to your friends — it sets them up automatically.'); }
+  catch (e) { prompt('Copy this link and send it to your friends:', url); }
+  toggleDrawer(false);
+};
+
+/* ================= messages ================= */
+function sorted() {
+  return [...msgs.values()].sort((a,b) => (a.t||0) - (b.t||0) || (a.id > b.id ? 1 : -1));
+}
+
+let drawQueued = false;
+function draw() {
+  if (drawQueued) return;
+  drawQueued = true;
+  requestAnimationFrame(() => { drawQueued = false; render(); });
+}
+
+function render() {
+  renderVoice();
+  const list = sorted(), now = Date.now(), stream = $('stream');
+  const pinned = !drewOnce || stream.scrollHeight - stream.scrollTop - stream.clientHeight < 100;
+
+  if (!list.length) {
+    stream.innerHTML = `<div class="empty"><b>Nobody's said anything yet</b>Share the code <strong>${esc(room)}</strong> with your friends, then say hi.</div>`;
+  } else {
+    let html = '', prev = null, day = '';
+    for (const m of list) {
+      const t = m.t || now;
+      const d = new Date(t).toDateString();
+      if (d !== day) { day = d; html += `<div class="daymark">${d === new Date().toDateString() ? 'Today' : d}</div>`; prev = null; }
+      const stack = prev && prev.uid === m.uid && t - (prev.t||0) < 5*60000 && !m.img;
+      const rr = reacts[m.id] || {}, tally = {};
+      for (const [uid, e] of Object.entries(rr)) (tally[e] = tally[e] || []).push(uid);
+      const chips = Object.entries(tally).map(([e, who]) =>
+        `<button class="react${who.includes(me.uid)?' on':''}" data-react="${m.id}" data-e="${e}">${e} ${who.length}</button>`).join('');
+      const pick = openMsg === m.id
+        ? `<div class="picker">${EMOJI.map(e=>`<button data-react="${m.id}" data-e="${e}">${e}</button>`).join('')}${m.uid===me.uid?`<button data-del="${m.id}">🗑️</button>`:''}</div>` : '';
+      let content;
+      if (m.img) {
+        const src = imgCache.get(m.img);
+        if (!src) fetchImg(m.img);
+        content = `<div class="photo">
+          <img class="${src?'':'ph'}" src="${src || m.thumb}" alt="Photo from ${esc(m.name)}" style="aspect-ratio:${m.w}/${m.h}" data-big="${src?m.img:''}" data-tap="${m.id}">
+          ${m.text ? `<div class="cap" data-tap="${m.id}">${link(m.text)}</div>` : ''}</div>`;
+      } else {
+        content = `<div class="bubble" data-tap="${m.id}">${link(m.text || '')}</div>`;
+      }
+      html += `<div class="msg${m.uid===me.uid?' mine':''}${stack?' stack':''}">
+        <div class="av" style="background:hsl(${m.hue} 70% 62%)">${esc(initials(m.name))}</div>
+        <div class="body">
+          ${stack?'':`<div class="who"><b style="color:hsl(${m.hue} 72% 76%)">${esc(m.name)}</b><span>${clock(t)}</span></div>`}
+          ${content}${chips?`<div class="reacts">${chips}</div>`:''}${pick}
+        </div></div>`;
+      prev = { ...m, t };
+    }
+    stream.innerHTML = html;
+  }
+  if (pinned) stream.scrollTop = stream.scrollHeight;
+  if (drewOnce && list.length > lastCount && list[list.length-1].uid !== me.uid) blip();
+  lastCount = list.length; drewOnce = true;
+
+  const arr = Object.values(presence);
+  $('people').innerHTML = arr.map(u => {
+    const inV = u.voice && u.voice.in;
+    const canInvite = inVoice && !inV && u.uid !== me.uid;
+    return `<div class="person">
+      <div class="av" style="background:hsl(${u.hue} 70% 62%)">${esc(initials(u.name))}</div>
+      <div class="nm">${esc(u.name)}${u.uid===me.uid?' <span class="tag">(you)</span>':''}${inV?` <span class="tag">· ${u.voice.muted?'muted':'in voice'}</span>`:''}</div>
+      ${canInvite?`<button class="invite" data-inv="${u.uid}">Invite</button>`:''}</div>`;
+  }).join('');
+  $('cnt').textContent = `${arr.length} ${arr.length === 1 ? 'person' : 'people'} here`;
+  $('rmeta').textContent = `${arr.length} online`;
+
+  const typers = arr.filter(u => u.uid !== me.uid && now - (u.typing||0) < 5000).map(u => u.name);
+  $('typing').textContent = typers.length === 1 ? `${typers[0]} is typing…` : typers.length > 1 ? `${typers.length} people are typing…` : '';
+}
+
+let ac;
+function blip() {
+  try {
+    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
+    const o = ac.createOscillator(), g = ac.createGain();
+    o.frequency.value = 740; o.type = 'sine';
+    g.gain.setValueAtTime(.0001, ac.currentTime);
+    g.gain.exponentialRampToValueAtTime(.05, ac.currentTime + .01);
+    g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + .22);
+    o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + .24);
+  } catch (e) {}
+}
+
+async function send() {
+  const box = $('box'), text = box.value.trim();
+  if (!text && !pending) return;
+  box.value = ''; box.style.height = 'auto'; $('send').disabled = true;
+  const base = { uid: me.uid, name: me.name, hue: me.hue, t: Date.now(), text };
+  try {
+    if (pending) {
+      const p = pending; pending = null;
+      $('pend').classList.add('hide');
+      const iRef = push(R('images'));
+      await set(iRef, p.full);
+      imgCache.set(iRef.key, p.full);
+      await push(R('messages'), { ...base, img: iRef.key, thumb: p.thumb, w: p.w, h: p.h });
+    } else {
+      await push(R('messages'), base);
+    }
+    update(R(`presence/${me.uid}`), { typing: 0 });
+  } catch (e) { toast("That didn't send: " + (e.message || e)); }
+}
+$('send').onclick = send;
+
+async function react(mid, e) {
+  const cur = (reacts[mid] || {})[me.uid];
+  openMsg = null;
+  try {
+    if (cur === e) await remove(R(`reacts/${mid}/${me.uid}`));
+    else await set(R(`reacts/${mid}/${me.uid}`), e);
+  } catch (err) {}
+}
+async function del(mid) {
+  const m = msgs.get(mid);
+  openMsg = null;
+  try {
+    if (m && m.img) await remove(R(`images/${m.img}`));
+    await remove(R(`messages/${mid}`));
+    await remove(R(`reacts/${mid}`));
+  } catch (e) {}
+}
+$('wipe').onclick = async () => {
+  if (!confirm('Delete every message and photo you sent in this room?')) return;
+  for (const m of [...msgs.values()]) if (m.uid === me.uid) await del(m.id);
+  toggleDrawer(false);
+};
+
+/* ================= photos ================= */
+$('pic').onclick = () => $('file').click();
+$('file').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  $('pendTxt').textContent = 'Shrinking photo…';
+  $('pend').classList.remove('hide');
+  try {
+    pending = await squash(f);
+    $('pendImg').src = pending.thumb;
+    $('pendTxt').textContent = 'Photo ready — add a caption or hit send';
+    $('send').disabled = false;
+  } catch (err) {
+    pending = null; $('pend').classList.add('hide');
+    toast("That image couldn't be read. Try a JPG or PNG.");
+  }
+};
+$('pendX').onclick = () => { pending = null; $('pend').classList.add('hide'); $('send').disabled = !$('box').value.trim(); };
+
+async function squash(file) {
+  const bmp = await loadBitmap(file);
+  const max = 1200, scale = Math.min(1, max / Math.max(bmp.width, bmp.height));
+  const w = Math.max(1, Math.round(bmp.width*scale)), h = Math.max(1, Math.round(bmp.height*scale));
+  const c = document.createElement('canvas'); c.width = w; c.height = h;
+  c.getContext('2d').drawImage(bmp, 0, 0, w, h);
+  let q = 0.7, full = c.toDataURL('image/jpeg', q);
+  while (full.length > 700000 && q > 0.3) { q -= 0.12; full = c.toDataURL('image/jpeg', q); }
+  const tw = 28, th = Math.max(1, Math.round(tw*h/w));
+  const t = document.createElement('canvas'); t.width = tw; t.height = th;
+  t.getContext('2d').drawImage(bmp, 0, 0, tw, th);
+  if (bmp.close) bmp.close();
+  return { full, thumb: t.toDataURL('image/jpeg', 0.5), w, h };
+}
+function loadBitmap(file) {
+  if (window.createImageBitmap) return createImageBitmap(file);
+  return new Promise((res, rej) => {
+    const r = new FileReader();
+    r.onload = () => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = r.result; };
+    r.onerror = rej; r.readAsDataURL(file);
+  });
+}
+async function fetchImg(id) {
+  if (imgCache.has(id) || fetching.has(id)) return;
+  fetching.add(id);
+  try { const s = await get(R(`images/${id}`)); if (s.exists()) { imgCache.set(id, s.val()); draw(); } }
+  catch (e) {}
+  fetching.delete(id);
+}
+
+/* ================= voice ================= */
+function voiceMembers() { return Object.values(presence).filter(u => u.voice && u.voice.in); }
+
+async function joinVoice() {
+  if (inVoice) return;
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    return toast('This browser blocks microphone access here. Open the page directly in Safari or Chrome.');
+  }
+  try {
+    local = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true } });
+  } catch (e) {
+    return toast(e.name === 'NotAllowedError'
+      ? 'Microphone permission was denied. Allow it in your browser settings for this site, then tap Join voice again.'
+      : 'No microphone found: ' + e.name);
+  }
+  inVoice = true; muted = false;
+  $('muteBtn').classList.remove('on');
+  startLevels();
+  await update(R(`presence/${me.uid}`), { voice: { in:true, muted:false } });
+  syncVoicePeers();
+}
+
+async function leaveVoice() {
+  if (!inVoice) return;
+  inVoice = false;
+  for (const uid of [...peers.keys()]) await dropPeer(uid, true);
+  if (local) { local.getTracks().forEach(t => t.stop()); local = null; }
+  if (levelTimer) { clearInterval(levelTimer); levelTimer = null; }
+  myMeter = null;
+  if (room && me) { try { await update(R(`presence/${me.uid}`), { voice: { in:false, muted:false } }); await remove(R(`signals/${me.uid}`)); } catch (e) {} }
+  draw();
+}
+
+function toggleMute() {
+  if (!inVoice || !local) return;
+  muted = !muted;
+  local.getAudioTracks().forEach(t => t.enabled = !muted);
+  $('muteBtn').classList.toggle('on', muted);
+  update(R(`presence/${me.uid}`), { voice: { in:true, muted } });
+}
+
+async function dropPeer(uid, clear) {
+  const p = peers.get(uid);
+  if (p) {
+    try { p.pc.close(); } catch (e) {}
+    if (p.audio) { p.audio.srcObject = null; p.audio.remove(); }
+    peers.delete(uid);
+  }
+  if (clear && room) { try { await remove(R(`signals/${uid}/${me.uid}`)); } catch (e) {} }
+}
+
+function makePeer(uid) {
+  const pc = new RTCPeerConnection(RTC);
+  const audio = document.createElement('audio');
+  audio.autoplay = true; audio.playsInline = true; audio.className = 'hide';
+  document.body.appendChild(audio);
+  const st = { pc, audio, gotDesc: '', seen: new Set(), queue: [], meter: null };
+  peers.set(uid, st);
+  if (local) local.getTracks().forEach(t => pc.addTrack(t, local));
+  pc.onicecandidate = e => { if (e.candidate) push(R(`signals/${uid}/${me.uid}/cands`), e.candidate.toJSON()).catch(()=>{}); };
+  pc.ontrack = e => { audio.srcObject = e.streams[0]; audio.play().catch(()=>{}); meterStream(uid, e.streams[0]); };
+  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed') dropPeer(uid, false); renderVoice(); };
+  return st;
+}
+
+async function syncVoicePeers() {
+  if (!inVoice) { for (const uid of [...peers.keys()]) await dropPeer(uid, true); return; }
+  const live = new Set(voiceMembers().map(u => u.uid).filter(x => x !== me.uid));
+  for (const uid of [...peers.keys()]) if (!live.has(uid)) await dropPeer(uid, true);
+  for (const uid of live) {
+    if (peers.has(uid) || me.uid >= uid) continue;
+    const st = makePeer(uid);
+    try {
+      const offer = await st.pc.createOffer();
+      await st.pc.setLocalDescription(offer);
+      await set(R(`signals/${uid}/${me.uid}/desc`), { type:'offer', sdp: st.pc.localDescription.sdp });
+    } catch (e) { await dropPeer(uid, false); }
+  }
+  renderVoice();
+}
+
+async function handleSignals(inbox) {
+  if (!inVoice) return;
+  for (const [from, box] of Object.entries(inbox)) {
+    let st = peers.get(from);
+    if (!st && box.desc && box.desc.type === 'offer') st = makePeer(from);
+    if (!st) continue;
+    try {
+      if (box.desc && box.desc.sdp !== st.gotDesc) {
+        st.gotDesc = box.desc.sdp;
+        await st.pc.setRemoteDescription(box.desc);
+        if (box.desc.type === 'offer') {
+          const ans = await st.pc.createAnswer();
+          await st.pc.setLocalDescription(ans);
+          await set(R(`signals/${from}/${me.uid}/desc`), { type:'answer', sdp: st.pc.localDescription.sdp });
+        }
+        for (const c of st.queue.splice(0)) { try { await st.pc.addIceCandidate(c); } catch (e) {} }
+      }
+      for (const [cid, cand] of Object.entries(box.cands || {})) {
+        if (st.seen.has(cid)) continue;
+        st.seen.add(cid);
+        if (st.pc.remoteDescription) { try { await st.pc.addIceCandidate(cand); } catch (e) {} }
+        else st.queue.push(cand);
+      }
+    } catch (e) {}
+  }
+  renderVoice();
+}
+
+function meterStream(uid, stream) {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    const an = audioCtx.createAnalyser(); an.fftSize = 512;
+    audioCtx.createMediaStreamSource(stream).connect(an);
+    const buf = new Uint8Array(an.frequencyBinCount);
+    const st = peers.get(uid);
+    if (st) st.meter = () => { an.getByteFrequencyData(buf); let s=0; for (const v of buf) s+=v; return s/buf.length; };
+  } catch (e) {}
+}
+function startLevels() {
+  try {
+    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const an = audioCtx.createAnalyser(); an.fftSize = 512;
+    audioCtx.createMediaStreamSource(local).connect(an);
+    const buf = new Uint8Array(an.frequencyBinCount);
+    myMeter = () => { an.getByteFrequencyData(buf); let s=0; for (const v of buf) s+=v; return s/buf.length; };
+  } catch (e) {}
+  levelTimer = setInterval(() => {
+    if (!inVoice) return;
+    const mark = (uid, lvl) => { const el = document.querySelector(`.vhead[data-u="${uid}"]`); if (el) el.classList.toggle('talk', lvl > 12); };
+    if (myMeter) mark(me.uid, muted ? 0 : myMeter());
+    for (const [uid, st] of peers) if (st.meter) mark(uid, st.meter());
+  }, 140);
+}
+
+function renderVoice() {
+  const mem = voiceMembers();
+  if (!inVoice) {
+    $('vbar').classList.add('hide');
+    $('jv').classList.remove('hide');
+    $('jvtxt').textContent = mem.length
+      ? `${mem.map(m=>m.name).slice(0,3).join(', ')}${mem.length>3?` +${mem.length-3}`:''} in voice`
+      : 'Voice channel is empty';
+    return;
+  }
+  $('jv').classList.add('hide');
+  $('vbar').classList.remove('hide');
+  $('vheads').innerHTML = mem.map(u => {
+    const p = peers.get(u.uid);
+    const label = u.uid === me.uid ? 'you' : (p && p.pc.connectionState === 'connected' ? u.name.split(' ')[0] : 'linking…');
+    return `<div class="vhead" data-u="${u.uid}">
+      <div class="av" style="background:hsl(${u.hue} 70% 62%)">${esc(initials(u.name))}${u.voice.muted?'<span class="m">🔇</span>':''}</div>
+      <small>${esc(label)}</small></div>`;
+  }).join('');
+}
+
+async function invite(uid) {
+  if (!inVoice) return toast('Join voice first, then invite people in.');
+  try { await push(R(`invites/${uid}`), { name: me.name, from: me.uid, t: Date.now() }); toast('Invite sent.'); }
+  catch (e) { toast("Invite didn't go through."); }
+}
+
+$('joinVoice').onclick = joinVoice;
+$('leaveVoice').onclick = leaveVoice;
+$('muteBtn').onclick = toggleMute;
+
+/* ================= wiring ================= */
+const box = $('box');
+box.oninput = () => {
+  box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight, 120) + 'px';
+  $('send').disabled = !box.value.trim() && !pending;
+  const now = Date.now();
+  if (box.value.trim() && now > typingUntil && room) { typingUntil = now + 3500; update(R(`presence/${me.uid}`), { typing: now }).catch(()=>{}); }
+};
+box.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 760) { e.preventDefault(); send(); } };
+
+$('stream').onclick = e => {
+  const big = e.target.closest('[data-big]');
+  if (big && big.dataset.big && imgCache.get(big.dataset.big)) {
+    const lb = document.createElement('div');
+    lb.className = 'lightbox';
+    lb.innerHTML = `<img src="${imgCache.get(big.dataset.big)}" alt="Photo">`;
+    lb.onclick = () => lb.remove();
+    document.body.appendChild(lb);
+    return;
+  }
+  const r = e.target.closest('[data-react]'); if (r) return react(r.dataset.react, r.dataset.e);
+  const d = e.target.closest('[data-del]'); if (d) return del(d.dataset.del);
+  const b = e.target.closest('[data-tap]'); if (b) { openMsg = openMsg === b.dataset.tap ? null : b.dataset.tap; draw(); }
+};
+$('people').onclick = e => { const i = e.target.closest('[data-inv]'); if (i) invite(i.dataset.inv); };
+
+const drawer = $('drawer'), scrim = $('scrim');
+function toggleDrawer(on) { drawer.classList.toggle('on', on); scrim.classList.toggle('on', on); }
+$('menu').onclick = () => toggleDrawer(!drawer.classList.contains('on'));
+scrim.onclick = () => toggleDrawer(false);
+
+window.addEventListener('pagehide', () => { if (room && me) { remove(R(`presence/${me.uid}`)); remove(R(`signals/${me.uid}`)); } });
+
+window.addEventListener('error', e => {
+  if (e.message && !/ResizeObserver/.test(e.message)) toast('Error: ' + e.message);
+});
+window.addEventListener('unhandledrejection', e => {
+  const m = (e.reason && (e.reason.message || e.reason.code)) || String(e.reason);
+  toast('Error: ' + m);
+});
+
+/* ================= start ================= */
+(function start() {
+  const hash = location.hash.match(/cfg=([^&]+)/);
+  if (hash) {
+    try { const cfg = decodeURIComponent(atob(hash[1])); store.set('ping.cfg', cfg); history.replaceState(null, '', location.pathname); } catch (e) {}
+  }
+  const saved = store.get('ping.cfg');
+  if (saved) { try { boot(JSON.parse(saved)); return; } catch (e) {} }
+})();
+</script>
+</body>
+</html>
