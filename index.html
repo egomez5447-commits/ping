@@ -3,150 +3,234 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
-<meta name="theme-color" content="#100E17">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#313338">
 <title>Ping</title>
 <style>
+
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
   html, body { margin:0; padding:0; height:100%; overscroll-behavior:none; }
   body {
-    --bg:#100E17; --panel:#1A1724; --raised:#241F33; --line:#322B45;
-    --ink:#EFEBF7; --mute:#948CAC; --accent:#7C5CFF; --live:#3ED598; --warn:#FF6B6B;
-    font-family: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
-    color:var(--ink); background:var(--bg); height:100dvh; display:flex; flex-direction:column;
-    overflow:hidden; position:relative; font-size:15px; line-height:1.45;
+    --rail:#1E1F22; --side:#2B2D31; --main:#313338; --input:#383A40; --raise:#404249;
+    --line:#26282C; --ink:#F2F3F5; --dim:#DBDEE1; --mute:#949BA4; --chan:#80848E;
+    --accent:#5865F2; --accent-h:#4752C4; --live:#23A559; --warn:#DA373C; --hover:#35373C;
+    font-family: "gg sans", "Helvetica Neue", Helvetica, system-ui, -apple-system, sans-serif;
+    color:var(--dim); background:var(--main); height:100dvh; display:flex; flex-direction:column;
+    overflow:hidden; position:relative; font-size:15px; line-height:1.375;
   }
-  button, input, textarea { font:inherit; color:inherit; }
-  :focus-visible { outline:2px solid var(--accent); outline-offset:2px; }
+  button, input, textarea, select { font:inherit; color:inherit; }
+  button { cursor:pointer; }
+  :focus-visible { outline:2px solid #00A8FC; outline-offset:2px; }
   .hide { display:none !important; }
+  ::-webkit-scrollbar { width:8px; }
+  ::-webkit-scrollbar-thumb { background:#1A1B1E; border-radius:8px; }
 
-  .gate { position:fixed; inset:0; z-index:40; background:var(--bg); display:flex; flex-direction:column; justify-content:center; padding:26px 22px calc(26px + env(safe-area-inset-bottom)); overflow-y:auto; }
+  /* ---- gates ---- */
+  .gate { position:fixed; inset:0; z-index:40; background:var(--main); display:flex; flex-direction:column; justify-content:center; padding:26px 22px calc(26px + env(safe-area-inset-bottom)); overflow-y:auto; }
   .gate.top { justify-content:flex-start; padding-top:calc(24px + env(safe-area-inset-top)); }
-  .mark { display:flex; align-items:center; gap:10px; margin-bottom:16px; }
-  .dot-live { width:11px; height:11px; border-radius:50%; background:var(--live); box-shadow:0 0 0 0 rgba(62,213,152,.55); animation:pulse 2.4s infinite; }
-  @keyframes pulse { 70%{box-shadow:0 0 0 12px rgba(62,213,152,0);} 100%{box-shadow:0 0 0 0 rgba(62,213,152,0);} }
-  h1 { margin:0; font-size:32px; letter-spacing:-.5px; font-weight:800; }
-  p.sub { margin:2px 0 20px; color:var(--mute); max-width:36ch; }
-  .tabs { display:flex; gap:6px; background:var(--panel); padding:5px; border-radius:14px; margin-bottom:18px; }
-  .tabs button { flex:1; padding:10px; border:0; background:transparent; border-radius:10px; color:var(--mute); font-weight:600; }
-  .tabs button.on { background:var(--raised); color:var(--ink); }
-  .field { margin-bottom:13px; }
-  .field label { display:block; font-size:13px; color:var(--mute); margin-bottom:6px; }
-  .field input, .field textarea { width:100%; padding:14px 15px; border-radius:14px; border:1px solid var(--line); background:var(--panel); }
-  .field textarea { min-height:130px; resize:vertical; font-family:ui-monospace,Menlo,monospace; font-size:12.5px; }
-  .field input::placeholder, .field textarea::placeholder { color:#5D5573; }
-  .btn-main { width:100%; padding:15px; border-radius:14px; border:0; background:var(--accent); color:#fff; font-weight:700; margin-top:6px; }
+  .mark { display:flex; align-items:center; gap:8px; margin-bottom:14px; color:var(--mute); font-size:13px; }
+  .dot-live { width:10px; height:10px; border-radius:50%; background:var(--live); }
+  h1 { margin:0; font-size:26px; font-weight:700; color:#fff; letter-spacing:-.2px; }
+  p.sub { margin:6px 0 22px; color:var(--mute); font-size:15px; max-width:36ch; }
+  .tabs { display:flex; gap:4px; background:var(--rail); padding:4px; border-radius:8px; margin-bottom:18px; }
+  .tabs button { flex:1; padding:9px; border:0; background:transparent; border-radius:5px; color:var(--mute); font-weight:600; font-size:14px; }
+  .tabs button.on { background:var(--raise); color:#fff; }
+  .field { margin-bottom:16px; }
+  .field label, label.cap { display:block; font-size:12px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; color:var(--dim); margin-bottom:8px; }
+  .field input, .field textarea, select, #ytUrl {
+    width:100%; padding:11px 12px; border-radius:4px; border:1px solid #1E1F22;
+    background:var(--rail); color:var(--ink); font-size:15px;
+  }
+  .field textarea { min-height:130px; resize:vertical; font-family:ui-monospace, Menlo, monospace; font-size:12.5px; }
+  .field input::placeholder, .field textarea::placeholder { color:#5C5E66; }
+  .btn-main { width:100%; padding:12px; border-radius:4px; border:0; background:var(--accent); color:#fff; font-weight:600; font-size:15px; margin-top:4px; }
+  .btn-main:hover { background:var(--accent-h); }
   .btn-main:disabled { opacity:.5; }
-  .err { color:#FF9B9B; font-size:13.5px; min-height:20px; margin-top:8px; }
-  .fineprint { color:#6E6689; font-size:12.5px; margin-top:14px; line-height:1.5; }
-  .swatches { display:flex; gap:8px; margin-bottom:14px; }
-  .swatches button { width:34px; height:34px; border-radius:11px; border:2px solid transparent; }
+  .err { color:#FA777C; font-size:13px; min-height:18px; margin-top:8px; }
+  .fineprint { color:var(--mute); font-size:12px; margin-top:14px; line-height:1.5; }
+  .swatches { display:flex; gap:8px; margin-bottom:16px; }
+  .swatches button { width:32px; height:32px; border-radius:50%; border:2px solid transparent; }
   .swatches button.on { border-color:#fff; }
   .steps { counter-reset:s; margin:0 0 20px; padding:0; list-style:none; }
-  .steps li { counter-increment:s; position:relative; padding:0 0 14px 34px; color:var(--mute); font-size:14px; }
-  .steps li::before { content:counter(s); position:absolute; left:0; top:0; width:24px; height:24px; border-radius:8px; background:var(--raised); border:1px solid var(--line); color:var(--ink); display:grid; place-items:center; font-size:12.5px; font-weight:700; }
+  .steps li { counter-increment:s; position:relative; padding:0 0 13px 32px; color:var(--mute); font-size:14px; }
+  .steps li::before { content:counter(s); position:absolute; left:0; top:1px; width:22px; height:22px; border-radius:50%; background:var(--rail); color:var(--dim); display:grid; place-items:center; font-size:11.5px; font-weight:700; }
   .steps li b { color:var(--ink); font-weight:600; }
-  .steps code { background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:1px 5px; font-size:12.5px; }
+  .steps code, code { background:var(--rail); border-radius:3px; padding:1px 5px; font-size:12.5px; font-family:ui-monospace, Menlo, monospace; }
 
-  .topbar { display:flex; align-items:center; gap:10px; padding:calc(10px + env(safe-area-inset-top)) 12px 10px; border-bottom:1px solid var(--line); background:var(--panel); flex:0 0 auto; }
-  .icobtn { background:var(--raised); border:1px solid var(--line); border-radius:11px; width:38px; height:38px; display:grid; place-items:center; flex:0 0 auto; }
-  .roomname { font-weight:700; letter-spacing:-.2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  /* ---- top bar ---- */
+  .topbar { display:flex; align-items:center; gap:10px; padding:calc(8px + env(safe-area-inset-top)) 12px 8px; background:var(--main); box-shadow:0 1px 0 rgba(0,0,0,.2); flex:0 0 auto; height:auto; z-index:5; }
+  .icobtn { background:transparent; border:0; width:34px; height:34px; display:grid; place-items:center; color:var(--mute); flex:0 0 auto; }
+  .roomname { font-weight:600; font-size:16px; color:#fff; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .roomname::before { content:'#'; color:var(--chan); margin-right:5px; font-weight:500; }
   .roommeta { font-size:12px; color:var(--mute); }
   .status { margin-left:auto; display:flex; align-items:center; gap:6px; font-size:12px; color:var(--mute); background:none; border:0; }
   .status i { width:8px; height:8px; border-radius:50%; background:var(--live); display:block; }
   .status.off i { background:var(--warn); }
 
-  .scrim { position:fixed; inset:0; background:rgba(8,6,14,.6); z-index:20; opacity:0; pointer-events:none; transition:opacity .18s; }
+  /* ---- sidebar ---- */
+  .scrim { position:fixed; inset:0; background:rgba(0,0,0,.6); z-index:20; opacity:0; pointer-events:none; transition:opacity .15s; }
   .scrim.on { opacity:1; pointer-events:auto; }
-  .drawer { position:fixed; top:0; bottom:0; left:0; width:285px; max-width:85%; background:var(--panel); border-right:1px solid var(--line); z-index:30; transform:translateX(-102%); transition:transform .2s ease; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top); }
+  .drawer { position:fixed; top:0; bottom:0; left:0; width:258px; max-width:82%; background:var(--side); z-index:30; transform:translateX(-102%); transition:transform .17s ease; display:flex; flex-direction:column; padding-top:env(safe-area-inset-top); }
   .drawer.on { transform:none; }
-  .drawer h3 { font-size:12px; color:var(--mute); font-weight:600; margin:16px 16px 8px; }
-  .people { overflow-y:auto; flex:1; padding-bottom:10px; }
-  .person { display:flex; align-items:center; gap:10px; padding:7px 14px; }
-  .person .nm { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; }
-  .person .tag { font-size:11px; color:var(--mute); }
-  .invite { border:1px solid var(--line); background:var(--raised); border-radius:9px; padding:5px 9px; font-size:12px; color:#C9BEFF; }
-  .av { width:32px; height:32px; border-radius:11px; display:grid; place-items:center; font-size:13px; font-weight:800; color:#120F1A; flex:0 0 auto; position:relative; }
-  .person .av::after { content:''; position:absolute; right:-2px; bottom:-2px; width:10px; height:10px; border-radius:50%; background:var(--live); border:2px solid var(--panel); }
-  .drawer .foot { border-top:1px solid var(--line); padding:12px calc(12px) calc(12px + env(safe-area-inset-bottom)); display:grid; gap:8px; }
-  .btn-ghost { padding:11px; border-radius:12px; background:var(--raised); border:1px solid var(--line); text-align:left; }
-  .btn-ghost.danger { color:#FF9B9B; }
+  .dhead { padding:14px 16px; font-weight:600; color:#fff; font-size:15px; box-shadow:0 1px 0 rgba(0,0,0,.24); flex:0 0 auto; }
+  .dscroll { flex:1; overflow-y:auto; padding:12px 8px 8px; }
+  .secthead { font-size:11px; font-weight:700; letter-spacing:.02em; text-transform:uppercase; color:var(--chan); padding:14px 8px 5px; }
+  .chan { display:flex; align-items:center; gap:7px; width:100%; padding:7px 8px; border:0; border-radius:4px; background:transparent; color:var(--chan); font-size:15px; font-weight:500; text-align:left; }
+  .chan .hash { color:var(--chan); font-size:17px; width:20px; text-align:center; flex:0 0 auto; }
+  .chan.on { background:var(--raise); color:#fff; }
+  .chan:active { background:var(--hover); }
+  .vmembers { padding:2px 0 4px 22px; }
+  .vmem { display:flex; align-items:center; gap:8px; padding:4px 8px; color:var(--mute); font-size:14px; }
+  .vmem .av { width:24px; height:24px; font-size:10px; }
+  .vmem.speaking .av { box-shadow:0 0 0 2px var(--live); }
+  .people { padding-bottom:6px; }
+  .person { display:flex; align-items:center; gap:10px; padding:5px 8px; border-radius:4px; }
+  .person .nm { min-width:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; flex:1; color:var(--mute); font-weight:500; font-size:15px; }
+  .person .tag { font-size:11px; color:var(--chan); font-weight:400; }
+  .invite { border:0; background:var(--accent); border-radius:3px; padding:4px 8px; font-size:12px; color:#fff; font-weight:500; }
+  .av { width:32px; height:32px; border-radius:50%; display:grid; place-items:center; font-size:12px; font-weight:600; color:#fff; flex:0 0 auto; position:relative; text-shadow:0 1px 1px rgba(0,0,0,.35); }
+  .person .av::after { content:''; position:absolute; right:-1px; bottom:-1px; width:10px; height:10px; border-radius:50%; background:var(--live); border:3px solid var(--side); box-sizing:content-box; margin:-3px; }
+  .userbar { display:flex; align-items:center; gap:8px; padding:8px; background:#232428; flex:0 0 auto; }
+  .userbar .av { width:32px; height:32px; }
+  .uinfo { flex:1; min-width:0; }
+  .uinfo b { display:block; font-size:14px; color:#fff; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .uinfo small { display:block; font-size:12px; color:var(--mute); }
+  .ubtn { width:32px; height:32px; border:0; border-radius:4px; background:transparent; display:grid; place-items:center; color:var(--dim); font-size:15px; }
+  .ubtn.on { color:var(--warn); }
+  .foot { padding:8px; display:grid; gap:2px; flex:0 0 auto; }
+  .btn-ghost { padding:8px 10px; border-radius:4px; background:transparent; border:0; text-align:left; color:var(--mute); font-size:14px; font-weight:500; }
+  .btn-ghost:active { background:var(--hover); color:#fff; }
+  .btn-ghost.danger { color:#FA777C; }
 
-  .voicebar { background:linear-gradient(180deg,#221C3D,#1C1830); border-bottom:1px solid var(--line); padding:10px 12px; display:flex; align-items:center; gap:10px; flex:0 0 auto; }
-  .vheads { display:flex; gap:7px; flex:1; overflow-x:auto; }
-  .vhead { text-align:center; width:46px; flex:0 0 auto; }
-  .vhead .av { width:38px; height:38px; border-radius:13px; margin:0 auto; box-shadow:0 0 0 0 rgba(62,213,152,.7); transition:box-shadow .12s; }
-  .vhead.talk .av { box-shadow:0 0 0 3px rgba(62,213,152,.85); }
-  .vhead small { display:block; font-size:10.5px; color:var(--mute); margin-top:3px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  .vhead .m { position:absolute; right:-4px; bottom:-4px; background:var(--warn); width:16px; height:16px; border-radius:50%; display:grid; place-items:center; font-size:9px; }
-  .vbtn { border-radius:12px; padding:10px 12px; background:var(--raised); border:1px solid var(--line); flex:0 0 auto; display:grid; place-items:center; }
-  .vbtn.on { background:var(--warn); border-color:var(--warn); color:#fff; }
-  .vbtn.leave { background:#3A1F2B; border-color:#5A2C3D; color:#FF9B9B; }
-  .joinvoice { display:flex; align-items:center; gap:10px; padding:9px 12px; background:#1E1A2E; border-bottom:1px solid var(--line); flex:0 0 auto; font-size:13.5px; color:var(--mute); }
-  .joinvoice button { margin-left:auto; background:var(--accent); border:0; color:#fff; padding:8px 14px; border-radius:11px; font-weight:600; }
+  /* ---- voice ---- */
+  .voicebar { background:#232428; padding:8px 10px; display:flex; align-items:center; gap:8px; flex:0 0 auto; box-shadow:0 1px 0 rgba(0,0,0,.2); }
+  .vheads { display:flex; gap:8px; flex:1; overflow-x:auto; }
+  .vhead { text-align:center; width:44px; flex:0 0 auto; }
+  .vhead .av { width:36px; height:36px; margin:0 auto; box-shadow:0 0 0 0 var(--live); transition:box-shadow .1s; }
+  .vhead.talk .av { box-shadow:0 0 0 3px var(--live); }
+  .vhead small { display:block; font-size:10px; color:var(--mute); margin-top:4px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .vhead .m { position:absolute; right:-3px; bottom:-3px; background:var(--warn); width:15px; height:15px; border-radius:50%; display:grid; place-items:center; font-size:8px; }
+  .vbtn { border:0; border-radius:50%; width:38px; height:38px; background:var(--raise); color:var(--dim); flex:0 0 auto; display:grid; place-items:center; }
+  .vbtn.on { background:var(--warn); color:#fff; }
+  .vbtn.leave { background:var(--warn); color:#fff; }
+  .joinvoice { display:flex; align-items:center; gap:10px; padding:8px 12px; background:#232428; flex:0 0 auto; font-size:13px; color:var(--mute); }
+  .joinvoice button { margin-left:auto; background:var(--live); border:0; color:#fff; padding:7px 13px; border-radius:4px; font-weight:600; font-size:13px; }
 
-  .stream { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:14px 12px 4px; }
-  .daymark { text-align:center; color:#6E6689; font-size:12px; margin:12px 0; }
-  .msg { display:flex; gap:10px; margin-bottom:12px; }
-  .msg.stack { margin-top:-6px; }
+  /* ---- stage ---- */
+  .stage { background:#000; flex:0 0 auto; position:relative; }
+  .stage video, .stage iframe { display:block; width:100%; aspect-ratio:16/9; border:0; background:#000; }
+  .stage .cap2 { position:absolute; top:8px; left:10px; background:rgba(0,0,0,.7); border-radius:4px; padding:3px 8px; font-size:11.5px; color:#fff; }
+  .stage .x { position:absolute; top:8px; right:10px; background:rgba(0,0,0,.7); border:0; border-radius:4px; padding:3px 8px; font-size:11.5px; color:#FA777C; }
+
+  /* ---- messages ---- */
+  .stream { flex:1; overflow-y:auto; -webkit-overflow-scrolling:touch; padding:16px 0 8px; background:var(--main); }
+  .daymark { display:flex; align-items:center; gap:10px; color:var(--chan); font-size:12px; font-weight:600; margin:16px 16px 8px; }
+  .daymark::before, .daymark::after { content:''; height:1px; background:#3F4147; flex:1; }
+  .msg { display:flex; gap:14px; padding:2px 16px 2px; margin-top:14px; }
+  .msg:active { background:var(--hover); }
+  .msg.stack { margin-top:1px; }
   .msg.stack .av { visibility:hidden; height:0; }
   .body { min-width:0; flex:1; }
-  .who { display:flex; align-items:baseline; gap:8px; margin-bottom:1px; }
-  .who b { font-size:14.5px; }
-  .who span { font-size:11.5px; color:#6E6689; }
-  .bubble { background:var(--raised); border:1px solid var(--line); border-radius:4px 14px 14px 14px; padding:8px 12px; display:inline-block; max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; }
-  .msg.mine .bubble { background:#2C2350; border-color:#3E3270; }
-  .msg.stack .bubble { border-radius:14px; }
-  .bubble a { color:#B7A6FF; }
-  .photo { border-radius:14px; overflow:hidden; border:1px solid var(--line); max-width:min(260px,72vw); background:#1A1724; }
-  .photo img { display:block; width:100%; height:auto; }
+  .who { display:flex; align-items:baseline; gap:8px; margin-bottom:2px; }
+  .who b { font-size:15px; font-weight:600; }
+  .who span { font-size:11px; color:var(--chan); }
+  .bubble { background:transparent; border:0; padding:0; display:block; max-width:100%; white-space:pre-wrap; overflow-wrap:anywhere; color:var(--dim); font-size:15px; }
+  .msg.mine .bubble { background:transparent; }
+  .bubble a { color:#00A8FC; text-decoration:none; }
+  .photo, .vidmsg { border-radius:8px; overflow:hidden; max-width:min(360px,74vw); background:#2B2D31; margin-top:4px; }
+  .photo img, .vidmsg video { display:block; width:100%; height:auto; }
   .photo img.ph { filter:blur(8px); }
-  .photo .cap { padding:7px 10px; font-size:13.5px; }
-  .reacts { display:flex; gap:5px; flex-wrap:wrap; margin-top:5px; }
-  .react { background:var(--panel); border:1px solid var(--line); border-radius:20px; padding:2px 9px; font-size:12.5px; }
-  .react.on { border-color:var(--accent); background:#2A2150; }
+  .photo .cap, .vidmsg .cap { padding:6px 10px; font-size:14px; }
+  .reacts { display:flex; gap:4px; flex-wrap:wrap; margin-top:5px; }
+  .react { background:#2B2D31; border:1px solid transparent; border-radius:8px; padding:2px 7px; font-size:13px; color:var(--dim); }
+  .react.on { border-color:var(--accent); background:rgba(88,101,242,.16); color:#C9CDFB; }
   .picker { display:flex; gap:4px; margin-top:6px; flex-wrap:wrap; }
-  .picker button { background:var(--panel); border:1px solid var(--line); border-radius:11px; padding:4px 8px; font-size:16px; }
-  .empty { color:var(--mute); text-align:center; padding:40px 24px; }
-  .empty b { display:block; color:var(--ink); margin-bottom:6px; font-size:16px; }
+  .picker button { background:#2B2D31; border:0; border-radius:6px; padding:4px 8px; font-size:16px; }
+  .empty { color:var(--mute); text-align:center; padding:48px 28px; font-size:14px; }
+  .empty b { display:block; color:#fff; margin-bottom:8px; font-size:19px; font-weight:700; }
 
-  .typing { height:18px; padding:0 16px 2px; font-size:12px; color:var(--mute); flex:0 0 auto; }
-  .composer { display:flex; gap:8px; align-items:flex-end; padding:8px 10px calc(8px + env(safe-area-inset-bottom)); border-top:1px solid var(--line); background:var(--panel); flex:0 0 auto; }
-  .composer textarea { flex:1; resize:none; max-height:120px; padding:11px 14px; border-radius:18px; border:1px solid var(--line); background:var(--raised); }
-  .circ { width:44px; height:44px; border-radius:50%; border:0; display:grid; place-items:center; flex:0 0 auto; }
-  .circ.pic { background:var(--raised); border:1px solid var(--line); }
+  /* ---- composer ---- */
+  .typing { height:20px; padding:0 16px; font-size:12px; color:var(--dim); flex:0 0 auto; }
+  .composer { display:flex; gap:10px; align-items:flex-end; padding:0 16px calc(16px + env(safe-area-inset-bottom)); background:var(--main); flex:0 0 auto; }
+  .composer textarea { flex:1; resize:none; max-height:120px; padding:11px 12px; border-radius:8px; border:0; background:var(--input); color:var(--ink); font-size:15px; }
+  .composer textarea::placeholder { color:#6D6F78; }
+  .circ { width:40px; height:40px; border-radius:50%; border:0; display:grid; place-items:center; flex:0 0 auto; }
+  .circ.pic { background:var(--input); color:var(--dim); }
   .circ.send { background:var(--accent); color:#fff; }
-  .circ:disabled { opacity:.35; }
-  .pending { display:flex; align-items:center; gap:10px; padding:8px 12px; border-top:1px solid var(--line); background:var(--panel); font-size:13px; color:var(--mute); }
-  .pending img { width:44px; height:44px; object-fit:cover; border-radius:10px; }
-  .pending button { margin-left:auto; background:none; border:0; color:#FF9B9B; }
+  .circ:disabled { opacity:.4; }
+  .pending { display:flex; align-items:center; gap:10px; margin:0 16px 8px; padding:8px 10px; border-radius:8px; background:var(--input); font-size:13px; color:var(--mute); }
+  .pending img { width:40px; height:40px; object-fit:cover; border-radius:4px; }
+  .pending button { margin-left:auto; background:none; border:0; color:#FA777C; }
 
-  .sheet { position:fixed; inset:0; z-index:65; background:rgba(6,4,12,.72); display:flex; align-items:flex-end; justify-content:center; }
-  .sheet .card { background:var(--panel); border:1px solid var(--line); border-radius:22px 22px 0 0; width:100%; max-width:520px; padding:18px 18px calc(18px + env(safe-area-inset-bottom)); max-height:88dvh; overflow-y:auto; }
-  .sheet h2 { margin:0 0 4px; font-size:21px; letter-spacing:-.3px; }
-  .sheet .lede { color:var(--mute); font-size:13.5px; margin:0 0 16px; }
-  .sheet label.cap { display:block; font-size:12px; color:var(--mute); margin:14px 0 6px; text-transform:uppercase; letter-spacing:.4px; }
-  .sheet select, .sheet .rowbtn { width:100%; padding:12px 13px; border-radius:13px; border:1px solid var(--line); background:var(--raised); }
-  .meter { height:12px; border-radius:8px; background:var(--raised); border:1px solid var(--line); overflow:hidden; margin-top:10px; }
-  .meter i { display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--live),#7C5CFF); transition:width .08s linear; }
-  .hint { color:var(--mute); font-size:12.5px; margin:7px 0 0; }
-  .hint.good { color:var(--live); }
-  .hint.bad { color:var(--warn); }
+  /* ---- sheets ---- */
+  .sheet { position:fixed; inset:0; z-index:65; background:rgba(0,0,0,.72); display:flex; align-items:flex-end; justify-content:center; }
+  .sheet .card { background:var(--main); border-radius:12px 12px 0 0; width:100%; max-width:520px; padding:20px 16px calc(20px + env(safe-area-inset-bottom)); max-height:88dvh; overflow-y:auto; }
+  .sheet h2 { margin:0 0 4px; font-size:20px; font-weight:700; color:#fff; }
+  .sheet .lede { color:var(--mute); font-size:14px; margin:0 0 18px; }
+  .meter { height:8px; border-radius:4px; background:var(--rail); overflow:hidden; margin-top:10px; }
+  .meter i { display:block; height:100%; width:0%; background:var(--live); transition:width .08s linear; }
+  .hint { color:var(--mute); font-size:12.5px; margin:8px 0 0; }
+  .hint.good { color:#3BA55D; }
+  .hint.bad { color:#FA777C; }
   .duo { display:flex; gap:8px; margin-top:10px; }
-  .duo button { flex:1; padding:12px; border-radius:13px; border:1px solid var(--line); background:var(--raised); }
-  .duo button.on { background:#2A2150; border-color:var(--accent); color:#C9BEFF; }
-  input[type=range] { width:100%; accent-color:var(--accent); }
-  .toggles { display:grid; gap:8px; margin-top:10px; }
-  .tg { display:flex; align-items:center; gap:10px; padding:11px 13px; border-radius:13px; border:1px solid var(--line); background:var(--raised); font-size:14px; }
+  .duo button { flex:1; padding:11px; border-radius:4px; border:0; background:var(--raise); color:var(--dim); font-weight:500; }
+  .duo button.on { background:var(--accent); color:#fff; }
+  input[type=range] { width:100%; accent-color:var(--accent); margin-top:4px; }
+  .toggles { display:grid; gap:6px; margin-top:6px; }
+  .tg { display:flex; align-items:center; gap:10px; padding:10px 12px; border-radius:4px; background:var(--rail); font-size:14px; }
   .tg input { accent-color:var(--accent); width:18px; height:18px; }
-  .toast { position:fixed; left:12px; right:12px; bottom:calc(96px + env(safe-area-inset-bottom)); z-index:60; background:var(--raised); border:1px solid #4A3E7A; border-radius:16px; padding:12px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 12px 40px rgba(0,0,0,.5); }
-  .toast .t { flex:1; font-size:14px; }
-  .toast button { border:0; border-radius:11px; padding:9px 13px; font-weight:600; }
+  .pads { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:6px; }
+  .pad { padding:14px 6px; border-radius:8px; border:0; background:var(--input); color:var(--dim); font-size:12.5px; font-weight:600; }
+  .pad:active { background:var(--accent); color:#fff; transform:scale(.96); }
+  .pad small { display:block; font-size:20px; margin-bottom:4px; }
+  .fx { display:grid; grid-template-columns:repeat(2,1fr); gap:8px; margin-top:6px; }
+  .fx button { padding:11px 8px; border-radius:4px; border:0; background:var(--input); color:var(--dim); font-size:14px; }
+  .fx button.on { background:var(--accent); color:#fff; }
+
+  /* ---- server rail ---- */
+  .drawer { width:300px; flex-direction:row; }
+  .rail { width:72px; background:var(--rail); flex:0 0 auto; overflow-y:auto; padding:12px 0; display:flex; flex-direction:column; align-items:center; gap:8px; }
+  .srv { width:48px; height:48px; border-radius:17px; border:0; background:var(--side); color:var(--dim); font-weight:700; font-size:15px; display:grid; place-items:center; position:relative; transition:border-radius .15s, background .15s; flex:0 0 auto; }
+  .srv:active, .srv.on { border-radius:16px; background:var(--accent); color:#fff; }
+  .srv.on::before { content:''; position:absolute; left:-16px; top:50%; transform:translateY(-50%); width:4px; height:26px; background:#fff; border-radius:0 4px 4px 0; }
+  .srv.add { color:var(--live); font-size:22px; font-weight:400; }
+  .rail hr { width:32px; border:0; border-top:1px solid #35373C; margin:2px 0; }
+  .side { flex:1; min-width:0; display:flex; flex-direction:column; background:var(--side); }
+  .chan .x2 { margin-left:auto; opacity:.5; font-size:15px; }
+  .newchan { color:var(--chan); font-size:14px; }
+
+  /* ---- rich text ---- */
+  .bubble pre { background:var(--rail); border:1px solid #2B2D31; border-radius:4px; padding:8px 10px; margin:4px 0; overflow-x:auto; font-family:ui-monospace,Menlo,monospace; font-size:13px; white-space:pre-wrap; }
+  .bubble code { background:var(--rail); border-radius:3px; padding:1px 4px; font-family:ui-monospace,Menlo,monospace; font-size:13.5px; }
+  .bubble blockquote { border-left:4px solid #4E5058; margin:3px 0; padding:0 0 0 10px; color:var(--dim); }
+  .bubble .spoil { background:#202225; color:transparent; border-radius:3px; cursor:pointer; }
+  .bubble .spoil.open { background:#2F3136; color:var(--dim); }
+  .mention { background:rgba(88,101,242,.28); color:#C9CDFB; border-radius:3px; padding:0 2px; font-weight:500; }
+  .mention.me { background:rgba(250,166,26,.28); color:#FAA61A; }
+  .edited { font-size:10px; color:var(--chan); margin-left:4px; }
+  .replyline { display:flex; align-items:center; gap:6px; font-size:13px; color:var(--mute); margin-bottom:2px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+  .replyline .av { width:16px; height:16px; font-size:8px; }
+  .replyline b { font-weight:600; }
+  .replybar { display:flex; align-items:center; gap:8px; margin:0 16px; padding:8px 12px; background:var(--input); border-radius:8px 8px 0 0; font-size:13px; color:var(--mute); }
+  .replybar button { margin-left:auto; background:none; border:0; color:var(--mute); }
+
+  /* ---- status dots ---- */
+  .person .av::after, .userbar .av::after { content:''; position:absolute; right:-1px; bottom:-1px; width:10px; height:10px; border-radius:50%; background:var(--live); border:3px solid var(--side); box-sizing:content-box; margin:-3px; }
+  .userbar .av::after { border-color:#232428; }
+  .st-idle::after { background:#F0B232 !important; }
+  .st-dnd::after { background:var(--warn) !important; }
+  .st-invisible::after { background:#80848E !important; }
+  .statrow { display:flex; align-items:center; gap:10px; padding:11px 12px; border-radius:4px; background:var(--rail); margin-bottom:6px; }
+  .sdot { width:12px; height:12px; border-radius:50%; flex:0 0 auto; }
+  .acts { display:grid; gap:4px; margin-top:10px; }
+  .acts button { text-align:left; padding:12px 14px; border-radius:4px; border:0; background:var(--rail); color:var(--dim); font-size:15px; }
+  .acts button.danger { color:#FA777C; }
+  .toast { position:fixed; left:12px; right:12px; bottom:calc(88px + env(safe-area-inset-bottom)); z-index:60; background:var(--rail); border-radius:8px; padding:12px 14px; display:flex; align-items:center; gap:10px; box-shadow:0 8px 24px rgba(0,0,0,.5); }
+  .toast .t { flex:1; font-size:14px; color:var(--dim); }
+  .toast button { border:0; border-radius:4px; padding:8px 12px; font-weight:600; font-size:13px; }
   .toast .yes { background:var(--accent); color:#fff; }
   .toast .no { background:transparent; color:var(--mute); }
-  .lightbox { position:fixed; inset:0; z-index:70; background:rgba(6,4,12,.94); display:grid; place-items:center; padding:16px; }
-  .lightbox img { max-width:100%; max-height:86dvh; border-radius:12px; }
+  .lightbox { position:fixed; inset:0; z-index:70; background:rgba(0,0,0,.9); display:grid; place-items:center; padding:16px; }
+  .lightbox img { max-width:100%; max-height:86dvh; border-radius:8px; }
 
   .row { display:flex; flex:1; min-height:0; }
   .col { display:flex; flex-direction:column; flex:1; min-width:0; }
@@ -155,27 +239,50 @@
     .scrim { display:none; }
     .icobtn.menu { display:none; }
   }
+
+  /* ---- v3 additions ---- */
+  .chan { position:relative; }
+  .chan.unread { color:#fff; font-weight:600; }
+  .chan.unread::before { content:''; position:absolute; left:-8px; top:50%; transform:translateY(-50%); width:4px; height:8px; border-radius:0 4px 4px 0; background:#fff; }
+  .srv { overflow:hidden; }
+  .stagebar { display:flex; gap:6px; flex-wrap:wrap; padding:6px 12px; background:#232428; flex:0 0 auto; }
+  .stagebar button { border:0; border-radius:14px; padding:6px 11px; background:var(--raise); color:var(--ink); font-size:12.5px; font-weight:600; }
+  .stage video, .stage iframe { max-height:62dvh; object-fit:contain; }
+  @media (min-width:760px) { .stage video, .stage iframe { max-height:52dvh; } }
+  #stageBody { width:100%; }
+  .stage .fs { position:absolute; top:8px; right:66px; background:rgba(0,0,0,.7); border:0; border-radius:4px; padding:3px 8px; font-size:11.5px; color:#fff; }
+  .stage:fullscreen { display:flex; align-items:center; }
+  .stage:fullscreen video, .stage:fullscreen iframe { max-height:100vh; height:100vh; aspect-ratio:auto; }
+  .vbtn.live { background:var(--live); color:#fff; }
+  .vhead .sh { position:absolute; left:-3px; bottom:-3px; background:var(--live); width:15px; height:15px; border-radius:50%; display:grid; place-items:center; font-size:8px; }
+  .vidload { display:grid; place-items:center; width:100%; min-height:120px; border:0; background:#111 center/cover no-repeat; color:#fff; position:relative; }
+  .vidload span { width:52px; height:52px; border-radius:50%; background:rgba(0,0,0,.6); display:grid; place-items:center; font-size:20px; }
+  .vidload em { position:absolute; bottom:8px; left:10px; font-style:normal; font-size:12px; background:rgba(0,0,0,.65); padding:2px 7px; border-radius:4px; }
+  .vidmsg video { max-height:60dvh; background:#000; }
+  .msg.mentioned { background:rgba(250,166,26,.08); box-shadow:inset 2px 0 0 #FAA61A; }
+  .msg.flash { background:rgba(88,101,242,.18); transition:background .6s; }
+  .replyline { cursor:pointer; }
+  .pad.hit { background:var(--accent); color:#fff; }
 </style>
 </head>
 <body>
 
-<!-- SETUP -->
-<div class="gate top" id="gSetup">
+<!-- SETUP (only shown if the built-in Firebase project is swapped out) -->
+<div class="gate top hide" id="gSetup">
   <div class="mark"><span class="dot-live"></span><span style="color:var(--mute);font-size:13px">one-time setup</span></div>
   <h1>Connect Ping</h1>
-  <p class="sub">Ping needs a free Firebase project to carry messages between phones. Takes about five minutes, once.</p>
+  <p class="sub">Ping needs a free Firebase project to carry messages between phones.</p>
   <ol class="steps">
-    <li>Go to <b>console.firebase.google.com</b> and tap <b>Create a project</b>. Any name. Skip Analytics.</li>
-    <li>Open <b>Build → Authentication → Get started</b>, scroll to <b>Anonymous</b>, turn it on, and save.</li>
-    <li>Open <b>Build → Realtime Database → Create database</b>. Choose <b>Start in test mode</b>.</li>
-    <li>In <b>Project settings → Your apps</b>, tap the <b>&lt;/&gt;</b> web icon, register the app, and copy the <code>firebaseConfig</code> block it shows you.</li>
-    <li>Paste it below.</li>
+    <li>Go to <b>console.firebase.google.com</b> and create a project.</li>
+    <li><b>Authentication → Sign-in method → Anonymous</b> → Enable.</li>
+    <li><b>Realtime Database → Create database</b>.</li>
+    <li><b>Project settings → Your apps → &lt;/&gt;</b>, copy the <code>firebaseConfig</code> block.</li>
   </ol>
-  <div class="field"><label for="cfg">Your firebaseConfig</label><textarea id="cfg" placeholder="const firebaseConfig = {&#10;  apiKey: &quot;...&quot;,&#10;  authDomain: &quot;...&quot;,&#10;  projectId: &quot;...&quot;&#10;};" spellcheck="false" autocapitalize="off"></textarea></div>
+  <div class="field"><label for="cfg">Your firebaseConfig</label><textarea id="cfg" spellcheck="false" autocapitalize="off"></textarea></div>
   <div class="field"><label for="dburl">Realtime Database URL</label><input id="dburl" placeholder="https://your-project-default-rtdb.firebaseio.com" spellcheck="false" autocapitalize="off"></div>
   <button class="btn-main" id="saveCfg">Connect</button>
   <div class="err" id="cerr"></div>
-  <p class="fineprint">Firebase web keys are public by design — they identify your project, they don't unlock it. Your database rules are what protect the data.</p>
+  <button class="btn-ghost" id="useBaked" style="margin-top:12px;text-align:center;width:100%">Go back to the normal Ping server</button>
 </div>
 
 <!-- JOIN -->
@@ -189,51 +296,89 @@
   <div class="swatches" id="sw"></div>
   <button class="btn-main" id="enterRoom">Join room</button>
   <div class="err" id="rerr"></div>
-  <button class="btn-ghost" id="reCfg" style="margin-top:16px;text-align:center">Change Firebase project</button>
   <p class="fineprint">Anyone with the code can walk into the room, so pick something only your friends would guess.</p>
+</div>
+
+<!-- LOADING -->
+<div class="gate" id="gLoad">
+  <div class="mark"><span class="dot-live"></span><span style="color:var(--mute);font-size:13px">connecting…</span></div>
+  <h1>Ping</h1>
+  <p class="sub">Getting things ready.</p>
 </div>
 
 <div class="row">
   <div class="scrim" id="scrim"></div>
   <aside class="drawer" id="drawer">
-    <h3 id="cnt">In the room</h3>
-    <div class="people" id="people"></div>
+    <div class="rail" id="rail"></div>
+    <div class="side">
+    <div class="dhead" id="dhead">room</div>
+    <div class="dscroll">
+      <div class="secthead">Text channels <button id="addChan" aria-label="New channel" style="float:right;background:none;border:0;color:var(--chan);font-size:17px;line-height:1">+</button></div>
+      <div id="chanList"></div>
+      <div class="secthead">Voice channels</div>
+      <button class="chan" id="chanVoice"><span class="hash">🔊</span>General</button>
+      <div class="vmembers" id="vlist"></div>
+      <div class="secthead" id="cnt">Members</div>
+      <div class="people" id="people"></div>
+    </div>
     <div class="foot">
       <button class="btn-ghost" id="invLink">Copy invite link</button>
+      <button class="btn-ghost" id="boardBtn2">Soundboard &amp; voice changer</button>
+      <button class="btn-ghost" id="watchBtn">Watch together</button>
       <button class="btn-ghost" id="sndBtn">Sound check</button>
       <button class="btn-ghost" id="switch">Switch room</button>
       <button class="btn-ghost" id="out2">Change my name</button>
-      <button class="btn-ghost danger" id="wipe">Delete my messages</button>
+      <button class="btn-ghost danger" id="wipe">Delete my messages here</button>
+    </div>
+    <div class="userbar">
+      <button class="av" id="uAv" aria-label="Set status" style="border:0">?</button>
+      <div class="uinfo"><b id="uName">you</b><small id="uState">Online</small></div>
+      <button class="ubtn" id="micQuick" aria-label="Mute">🎙</button>
+      <button class="ubtn" id="gearQuick" aria-label="Sound check">⚙</button>
+    </div>
     </div>
   </aside>
 
   <div class="col">
     <header class="topbar">
-      <button class="icobtn menu" id="menu" aria-label="Show people">
+      <button class="icobtn menu" id="menu" aria-label="Channels and people">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
       </button>
       <div style="min-width:0">
-        <div class="roomname" id="rtitle">room</div>
+        <div class="roomname" id="rtitle">general</div>
         <div class="roommeta" id="rmeta">connecting…</div>
       </div>
       <button class="status" id="stat"><i></i><span>Live</span></button>
     </header>
 
-    <div class="joinvoice hide" id="jv"><span id="jvtxt">Voice channel is empty</span><button id="joinVoice">Join voice</button></div>
+    <div class="joinvoice" id="jv"><span id="jvtxt">Voice channel is empty</span><button id="joinVoice">Join voice</button></div>
 
     <div class="voicebar hide" id="vbar">
       <div class="vheads" id="vheads"></div>
       <button class="vbtn" id="muteBtn" aria-label="Mute">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a3 3 0 0 1 3 3v6a3 3 0 0 1-6 0V6a3 3 0 0 1 3-3z"/><path d="M19 11a7 7 0 0 1-14 0M12 18v3"/></svg>
       </button>
+      <button class="vbtn" id="boardBtn" aria-label="Soundboard">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+      </button>
+      <button class="vbtn" id="shareBtn" aria-label="Share screen">
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="2" y="4" width="20" height="13" rx="2"/><path d="M8 21h8M12 17v4"/></svg>
+      </button>
       <button class="vbtn" id="sndBtn2" aria-label="Sound check">
-        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2V21a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H7a1.7 1.7 0 0 0 1-1.5V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V7a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M4.9 19.1L7 17M17 7l2.1-2.1"/></svg>
       </button>
       <button class="vbtn leave" id="leaveVoice" aria-label="Leave voice">
         <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9a13 13 0 0 1 18 0v3l-4 1-1-3a9 9 0 0 0-8 0l-1 3-4-1z"/></svg>
       </button>
     </div>
 
+    <div class="stagebar hide" id="stagebar"></div>
+    <div class="stage hide" id="stage">
+      <div id="stageBody"></div>
+      <span class="cap2" id="stageWho">Screen</span>
+      <button class="fs" id="stageFs">Full screen</button>
+      <button class="x" id="stageX">Close</button>
+    </div>
     <div class="stream" id="stream"></div>
     <div class="typing" id="typing"></div>
 
@@ -243,22 +388,66 @@
       <button id="pendX">Remove</button>
     </div>
 
+    <div class="replybar hide" id="replyBar"><span id="replyTxt"></span><button id="replyX" aria-label="Cancel">✕</button></div>
     <div class="composer">
-      <button class="circ pic" id="pic" aria-label="Send a photo">
+      <button class="circ pic" id="pic" aria-label="Send a photo or video">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="3"/><circle cx="8.5" cy="10" r="1.5"/><path d="M21 16l-5-5-6 6"/></svg>
       </button>
-      <textarea id="box" rows="1" placeholder="Message the room" enterkeyhint="send"></textarea>
+      <textarea id="box" rows="1" placeholder="Message #general" enterkeyhint="send"></textarea>
       <button class="circ send" id="send" disabled aria-label="Send">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12l16-8-6 8 6 8z"/></svg>
       </button>
     </div>
   </div>
 </div>
+
+<div class="sheet hide" id="act">
+  <div class="card">
+    <div class="picker" id="actEmoji"></div>
+    <div class="acts" id="actList"></div>
+  </div>
+</div>
+
+<div class="sheet hide" id="stat2">
+  <div class="card">
+    <h2>Set your status</h2>
+    <p class="lede">Invisible hides you from the member list. Do not disturb silences pings, invites and the soundboard.</p>
+    <div id="statList"></div>
+    <button class="btn-main" id="statDone">Close</button>
+  </div>
+</div>
+
+<div class="sheet hide" id="board">
+  <div class="card">
+    <h2>Soundboard</h2>
+    <p class="lede">Everyone in the room hears it. Sounds are made on the spot, so nothing to download.</p>
+    <div class="pads" id="pads"></div>
+    <label class="cap" style="margin-top:18px">Voice changer</label>
+    <div class="fx" id="fxList"></div>
+    <p class="hint" id="fxHint">Pick one, then join voice. You can switch mid-call.</p>
+    <button class="btn-main" id="boardDone" style="margin-top:14px">Done</button>
+  </div>
+</div>
+
+<div class="sheet hide" id="watch">
+  <div class="card">
+    <h2>Watch together</h2>
+    <p class="lede">Paste a YouTube link. Everyone's player follows whoever hits play, pause or skips.</p>
+    <div class="field"><label for="ytUrl">YouTube link</label>
+    <input id="ytUrl" placeholder="https://www.youtube.com/watch?v=..." spellcheck="false" autocapitalize="off"></div>
+    <div class="duo">
+      <button id="ytStart">Start for everyone</button>
+      <button id="ytStop">Stop for everyone</button>
+    </div>
+    <p class="hint">Some music videos and anything age-restricted refuse to play outside YouTube — that's the uploader's setting.</p>
+    <button class="btn-main" id="watchDone" style="margin-top:14px">Done</button>
+  </div>
+</div>
+
 <div class="sheet hide" id="snd">
   <div class="card">
     <h2>Sound check</h2>
     <p class="lede">Make sure people can hear you, and you can hear them.</p>
-
     <label class="cap" for="inSel">Microphone</label>
     <select id="inSel"></select>
     <div class="meter"><i id="mFill"></i></div>
@@ -267,33 +456,35 @@
       <button id="monBtn">Hear myself</button>
       <button id="testBtn">Play test sound</button>
     </div>
-
-    <label class="cap" for="volRange">Volume of everyone else</label>
+    <label class="cap" for="volRange" style="margin-top:16px">Volume of everyone else</label>
     <input type="range" id="volRange" min="0" max="100" value="100">
-
     <div id="outWrap">
-      <label class="cap" for="outSel">Speaker</label>
+      <label class="cap" for="outSel" style="margin-top:12px">Speaker</label>
       <select id="outSel"></select>
     </div>
-
-    <label class="cap">Processing</label>
+    <label class="cap" style="margin-top:16px">Processing</label>
     <div class="toggles">
       <label class="tg"><input type="checkbox" id="ecChk" checked> Echo cancellation</label>
       <label class="tg"><input type="checkbox" id="nsChk" checked> Noise suppression</label>
     </div>
     <p class="hint">Turn these off only if you're on headphones and want raw audio — music, for instance.</p>
-
-    <button class="btn-main" id="sndDone">Done</button>
+    <button class="btn-main" id="sndDone" style="margin-top:14px">Done</button>
   </div>
 </div>
+
 <audio id="mon" class="hide"></audio>
 <input type="file" id="file" accept="image/*" class="hide">
+<input type="file" id="vfile" accept="video/*" class="hide">
 <div id="toasts"></div>
-
 <script type="module">
+/* ============================================================
+   Ping v3 — channels, replies, statuses, soundboard, voice
+   changer, screen share, watch together, video clips.
+   Firebase Auth (anonymous) + Realtime Database + WebRTC mesh.
+   ============================================================ */
 let initializeApp, getAuth, signInAnonymously, onAuthStateChanged,
     getDatabase, ref, push, set, update, remove, get, onValue,
-    onChildAdded, onChildRemoved, onDisconnect, query, limitToLast, serverTimestamp;
+    onChildAdded, onChildChanged, onChildRemoved, onDisconnect, query, limitToLast, serverTimestamp;
 
 let sdkReady = null;
 function loadSDK() {
@@ -311,15 +502,15 @@ function loadSDK() {
         ({ initializeApp } = a);
         ({ getAuth, signInAnonymously, onAuthStateChanged } = au);
         ({ getDatabase, ref, push, set, update, remove, get, onValue,
-           onChildAdded, onChildRemoved, onDisconnect, query, limitToLast, serverTimestamp } = d);
+           onChildAdded, onChildChanged, onChildRemoved, onDisconnect, query, limitToLast, serverTimestamp } = d);
         return v;
-      } catch (e) { last = e; sdkReady = null; }
+      } catch (e) { last = e; }
     }
+    sdkReady = null;
     throw new Error("Couldn't download Firebase. Check your internet, then reload. (" + (last && last.message) + ")");
   })();
   return sdkReady;
 }
-
 
 const BAKED_CFG = {
   apiKey: "AIzaSyClx2nNs7fF2pDrc5Sqe1qKnURw_MgSUqs",
@@ -339,24 +530,42 @@ const RTC = { iceServers: [
   { urls: 'stun:stun1.l.google.com:19302' },
   { urls: 'stun:global.stun.twilio.com:3478' }
 ]};
+const MAX_VIDEO = 4 * 1024 * 1024;
+const DEFAULT_CHANS = ['general', 'random'];
 
-const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const slug = s => (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0,24);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug = (s, n = 24) => (s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'').slice(0, n);
 const initials = n => (n||'?').trim().split(/\s+/).slice(0,2).map(w=>w[0]).join('').toUpperCase() || '?';
 const clock = t => new Date(t).toLocaleTimeString([], {hour:'numeric', minute:'2-digit'});
-const link = t => esc(t).replace(/(https?:\/\/[^\s<]+)/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);
+const mb = n => ((n||0) / 1048576).toFixed(1) + ' MB';
+const avBg = h => `hsl(${h} 70% 52%)`;
+const sessionMem = {};
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch (e) { return sessionMem[k] || null; } },
   set(k,v) { try { localStorage.setItem(k,v); } catch (e) { sessionMem[k] = v; } },
   del(k) { try { localStorage.removeItem(k); } catch (e) { delete sessionMem[k]; } }
 };
-const sessionMem = {};
+const jget = (k, d) => { try { return JSON.parse(store.get(k) || '') ?? d; } catch (e) { return d; } };
+function setHTML(el, html) { if (el._html !== html) { el.innerHTML = html; el._html = html; } }
 
-let db = null, auth = null, me = null, room = '';
-let msgs = new Map(), reacts = {}, presence = {}, imgCache = new Map(), fetching = new Set();
-let unsubs = [], openMsg = null, pending = null, typingUntil = 0, lastCount = 0, drewOnce = false;
+let db = null, auth = null, me = null, room = '', chan = 'general', serverOffset = 0;
+let msgs = new Map(), reacts = {}, presence = {}, chans = {};
+const imgCache = new Map(), vidCache = new Map(), fetching = new Set();
+let unsubs = [], chanUnsubs = [], pending = null, typingUntil = 0, lastCount = 0, drewOnce = false;
+let replyTo = null, editing = null, actMsg = null, hiddenNew = 0;
+let myStatus = store.get('ping.status') || 'online';
 let local = null, inVoice = false, muted = false, audioCtx = null, levelTimer = null, myMeter = null;
+let screen = null, stageKind = null, stageUid = null;
 const peers = new Map();
+const seen = jget('ping.seen', {});
+const serverNow = () => Date.now() + serverOffset;
+
+function actx() {
+  audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
+  if (audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+  return audioCtx;
+}
+document.addEventListener('pointerdown', () => { try { actx(); } catch (e) {} }, { passive: true });
 
 /* ================= toasts ================= */
 function toast(text, onYes, yesLabel) {
@@ -365,14 +574,16 @@ function toast(text, onYes, yesLabel) {
   el.innerHTML = `<span class="t">${esc(text)}</span>` +
     (onYes ? `<button class="yes">${esc(yesLabel||'OK')}</button><button class="no">Later</button>`
            : `<button class="no">Close</button>`);
-  $('toasts').appendChild(el);
+  const box = $('toasts');
+  while (box.children.length > 2) box.firstElementChild.remove();
+  box.appendChild(el);
   const kill = () => el.remove();
   el.querySelector('.no').onclick = kill;
   if (onYes) el.querySelector('.yes').onclick = () => { kill(); onYes(); };
-  setTimeout(kill, onYes ? 25000 : 6500);
+  setTimeout(kill, onYes ? 20000 : 6000);
 }
 
-/* ================= config ================= */
+/* ================= config / boot ================= */
 function parseCfg(txt) {
   const m = txt.match(/\{[\s\S]*\}/);
   if (!m) throw new Error('paste the whole firebaseConfig block, curly braces and all');
@@ -397,63 +608,65 @@ $('saveCfg').onclick = async () => {
     if (!u || !/^https:\/\//.test(u)) throw new Error('Add the Realtime Database URL — it starts with https://');
     o.databaseURL = u.replace(/\/+$/,'');
     store.set('ping.cfg', JSON.stringify(o)); store.del('ping.reconfig');
-    $('saveCfg').disabled = true; $('saveCfg').textContent = 'Connecting…';
-    await boot(o);
-  } catch (e) { showSetupError(e.message); }
+    location.hash = ''; location.reload();
+  } catch (e) { $('cerr').textContent = e.message; }
 };
-$('reCfg').onclick = () => { store.del('ping.cfg'); store.set('ping.reconfig','1'); location.hash = ''; location.reload(); };
+$('useBaked').onclick = () => { store.del('ping.cfg'); store.del('ping.reconfig'); location.hash = ''; location.reload(); };
 
-/* ================= boot ================= */
-function showSetupError(msg) {
+function fatal(msg) {
+  $('gLoad').classList.add('hide');
   $('gSetup').classList.remove('hide');
   $('cerr').textContent = msg;
-  $('saveCfg').disabled = false;
-  $('saveCfg').textContent = 'Connect';
-  $('cerr').scrollIntoView({ block: 'center', behavior: 'smooth' });
   toast(msg);
 }
 
 async function boot(cfg) {
-  try { await loadSDK(); }
-  catch (e) { return showSetupError(e.message); }
+  try { await loadSDK(); } catch (e) { return fatal(e.message); }
   try {
     const app = initializeApp(cfg);
     auth = getAuth(app);
     db = getDatabase(app);
-  } catch (e) { return showSetupError('Firebase rejected that config: ' + e.message); }
+  } catch (e) { return fatal('Firebase rejected that config: ' + e.message); }
 
-  $('gSetup').classList.add('hide');
   onAuthStateChanged(auth, user => {
     if (!user) { me = null; return; }
+    const first = !me;
     me = { uid: user.uid, name: store.get('ping.name') || pickName(), hue: +(store.get('ping.hue') || HUES[0]) };
+    if (!first) return;
     $('ad').value = me.name;
     setHue(me.hue);
+    $('gLoad').classList.add('hide');
     $('gRoom').classList.remove('hide');
-    const last = store.get('ping.room'); if (last) $('rm').value = last;
+    const fromLink = (location.hash.match(/[#&]r=([a-z0-9-]+)/) || [])[1];
+    const last = fromLink || store.get('ping.room');
+    if (last) $('rm').value = last;
   });
   try {
     await signInAnonymously(auth);
   } catch (e) {
     const c = String(e.code || '');
-    return showSetupError(
-      c.includes('operation-not-allowed')
-        ? 'Almost there — Anonymous sign-in is still off. Firebase console → Authentication → Sign-in method → Anonymous → Enable, then tap Connect again.'
-      : c.includes('api-key-not-valid') || c.includes('invalid-api-key')
-        ? 'That apiKey was mistyped. Use the copy button in the Firebase console and paste it again.'
-      : c.includes('configuration-not-found')
-        ? 'No sign-in method is switched on yet. Firebase console → Authentication → Get started → Anonymous → Enable.'
+    return fatal(
+      c.includes('operation-not-allowed') || c.includes('configuration-not-found')
+        ? 'Anonymous sign-in is off. Firebase console → Authentication → Sign-in method → Anonymous → Enable.'
+      : c.includes('api-key')
+        ? 'That apiKey was mistyped. Copy it again from the Firebase console.'
         : 'Firebase sign-in failed: ' + (e.message || c));
   }
-  onValue(ref(db, '.info/connected'), s => setStat(!!s.val()));
+  onValue(ref(db, '.info/connected'), s => {
+    const ok = !!s.val();
+    setStat(ok);
+    if (ok && room && me) publishPresence().catch(()=>{});
+  });
+  onValue(ref(db, '.info/serverTimeOffset'), s => { serverOffset = s.val() || 0; });
 }
 function setStat(ok) {
   const el = $('stat');
   el.classList.toggle('off', !ok);
   el.lastElementChild.textContent = ok ? 'Live' : 'Offline';
 }
-$('stat').onclick = () => toast(navigator.onLine ? 'Connected to your Firebase project.' : 'Your phone is offline — messages will send when you reconnect.');
+$('stat').onclick = () => toast(navigator.onLine ? 'Connected to the Ping server.' : "You're offline — messages will send when you reconnect.");
 
-/* ================= identity ================= */
+/* ================= identity & status ================= */
 const NAMES = ['Comet','Rider','Pixel','Blaze','Nova','Echo','Drift','Wolf','Neon','Ghost','Ace','Zip'];
 let pickHue = HUES[0];
 const pickName = () => NAMES[Math.floor(Math.random()*NAMES.length)] + Math.floor(10 + Math.random()*89);
@@ -461,28 +674,59 @@ function setHue(h) {
   pickHue = h;
   [...$('sw').children].forEach(c => c.classList.toggle('on', +c.dataset.hue === h));
 }
-$('sw').innerHTML = HUES.map(h => `<button data-hue="${h}" style="background:hsl(${h} 70% 62%)"></button>`).join('');
+$('sw').innerHTML = HUES.map(h => `<button data-hue="${h}" aria-label="Colour" style="background:hsl(${h} 70% 62%)"></button>`).join('');
 setHue(pickHue);
 $('sw').onclick = e => { const b = e.target.closest('[data-hue]'); if (b) setHue(+b.dataset.hue); };
 
 $('out2').onclick = () => {
+  toggleDrawer(false);
   const n = prompt('Show up as', me.name);
   if (n && n.trim()) {
     me.name = n.trim().slice(0,18);
     store.set('ping.name', me.name);
     if (room) update(R(`presence/${me.uid}`), { name: me.name }).catch(()=>{});
+    draw();
   }
-  toggleDrawer(false);
 };
 
-/* ================= room ================= */
+const STATUSES = [['online','Online','#23A559'],['idle','Idle','#F0B232'],['dnd','Do not disturb','#DA373C'],['invisible','Invisible','#80848E']];
+const statusLabel = k => (STATUSES.find(s => s[0] === k) || STATUSES[0])[1];
+$('statList').innerHTML = STATUSES.map(([k,l,c]) => `<button class="statrow" data-st="${k}" style="width:100%;border:0;text-align:left;color:var(--dim)"><span class="sdot" style="background:${c}"></span>${l}</button>`).join('');
+$('statList').onclick = e => {
+  const b = e.target.closest('[data-st]'); if (!b) return;
+  myStatus = b.dataset.st; store.set('ping.status', myStatus);
+  $('stat2').classList.add('hide');
+  if (room) update(R(`presence/${me.uid}`), { status: myStatus }).catch(()=>{});
+  draw();
+};
+$('statDone').onclick = () => $('stat2').classList.add('hide');
+$('stat2').onclick = e => { if (e.target === $('stat2')) $('stat2').classList.add('hide'); };
+$('uAv').onclick = () => $('stat2').classList.remove('hide');
+
+/* ================= rooms ================= */
 function R(p) { return ref(db, `rooms/${room}/${p}`); }
+const msgPath = c => c === 'general' ? 'messages' : `cmsgs/${c}`;
+const recentRooms = () => jget('ping.rooms', []);
+function rememberRoom(r) { store.set('ping.rooms', JSON.stringify([r, ...recentRooms().filter(x => x !== r)].slice(0, 8))); }
+
+function presenceData() {
+  return { uid: me.uid, name: me.name, hue: me.hue, typing: 0, status: myStatus,
+           voice: { in: inVoice, muted }, share: !!screen, at: serverTimestamp() };
+}
+async function publishPresence() {
+  const pRef = R(`presence/${me.uid}`);
+  await set(pRef, presenceData());
+  onDisconnect(pRef).remove();
+  onDisconnect(R(`signals/${me.uid}`)).remove();
+}
 
 async function exitRoom() {
-  unsubs.forEach(f => { try { f(); } catch (e) {} });
-  unsubs = [];
+  unsubs.forEach(f => { try { f(); } catch (e) {} }); unsubs = [];
+  chanUnsubs.forEach(f => { try { f(); } catch (e) {} }); chanUnsubs = [];
+  closeStage();
+  watch = null; watchLoaded = false;
   if (room && me) { try { await remove(R(`presence/${me.uid}`)); } catch (e) {} }
-  msgs = new Map(); reacts = {}; presence = {}; lastCount = 0; drewOnce = false;
+  msgs = new Map(); reacts = {}; presence = {}; chans = {}; lastCount = 0; drewOnce = false;
 }
 
 $('enterRoom').onclick = async () => {
@@ -493,156 +737,321 @@ $('enterRoom').onclick = async () => {
   me.hue = pickHue; store.set('ping.hue', String(pickHue));
   $('rerr').textContent = ''; $('enterRoom').disabled = true; $('enterRoom').textContent = 'Joining…';
   try { await enterRoom(c); }
-  catch (e) { $('rerr').textContent = 'Firebase refused: ' + (e.message || e); }
+  catch (e) { $('gRoom').classList.remove('hide'); $('rerr').textContent = 'The server refused: ' + (e.message || e); }
   $('enterRoom').disabled = false; $('enterRoom').textContent = 'Join room';
 };
 $('rm').onkeydown = e => { if (e.key === 'Enter') $('enterRoom').click(); };
+$('ad').onkeydown = e => { if (e.key === 'Enter') $('enterRoom').click(); };
 
 async function enterRoom(code) {
+  await leaveVoice();
   await exitRoom();
   room = code;
   store.set('ping.room', room);
-  $('rtitle').textContent = '#' + room;
+  rememberRoom(room);
+  if (location.hash) history.replaceState(null, '', location.pathname);
   $('gRoom').classList.add('hide');
+  await publishPresence();
 
-  const pRef = R(`presence/${me.uid}`);
-  await set(pRef, { name: me.name, hue: me.hue, uid: me.uid, typing: 0, voice: { in:false, muted:false }, at: serverTimestamp() });
-  onDisconnect(pRef).remove();
-  onDisconnect(R(`signals/${me.uid}`)).remove();
-
-  const mq = query(R('messages'), limitToLast(300));
-  unsubs.push(onChildAdded(mq, s => { msgs.set(s.key, { id:s.key, ...s.val() }); draw(); }));
-  unsubs.push(onChildRemoved(R('messages'), s => { msgs.delete(s.key); lastCount = 0; draw(); }));
   unsubs.push(onValue(R('reacts'), s => { reacts = s.val() || {}; draw(); }));
-  unsubs.push(onValue(R('presence'), s => { presence = s.val() || {}; syncVoicePeers(); draw(); }));
+  unsubs.push(onValue(R('presence'), s => {
+    const prev = presence;
+    presence = s.val() || {};
+    noticeShares(prev);
+    syncVoicePeers();
+    draw();
+  }));
+  unsubs.push(onValue(R('chans'), s => { chans = s.val() || {}; draw(); }));
   unsubs.push(onChildAdded(R(`invites/${me.uid}`), s => {
     const v = s.val() || {};
-    remove(s.ref);
-    if (Date.now() - (v.t || 0) < 90000 && !inVoice) toast(`${v.name} invited you to voice.`, joinVoice, 'Join');
+    remove(s.ref).catch(()=>{});
+    if (Date.now() - (v.t || 0) < 90000 && !inVoice && myStatus !== 'dnd') toast(`${v.name} invited you to voice.`, joinVoice, 'Join');
   }));
   unsubs.push(onValue(R(`signals/${me.uid}`), s => handleSignals(s.val() || {})));
-  draw();
+  unsubs.push(onChildAdded(query(R('sfx'), limitToLast(3)), s => onSfx(s.key, s.val() || {})));
+  unsubs.push(onValue(R('watch'), s => onWatch(s.val())));
+  openChannel(store.get('ping.chan.' + room) || 'general');
 }
 
-$('switch').onclick = async () => { toggleDrawer(false); await leaveVoice(); await exitRoom(); $('rm').value = room; $('gRoom').classList.remove('hide'); };
+$('switch').onclick = async () => { toggleDrawer(false); await leaveVoice(); await exitRoom(); $('rm').value = room; room = ''; $('gRoom').classList.remove('hide'); };
 
 $('invLink').onclick = async () => {
-  const cfg = store.get('ping.cfg');
-  const url = location.origin + location.pathname + (BAKED_CFG ? '' : '#cfg=' + btoa(encodeURIComponent(cfg)));
-  try { await navigator.clipboard.writeText(url); toast('Invite link copied. Text it to your friends — it sets them up automatically.'); }
-  catch (e) { prompt('Copy this link and send it to your friends:', url); }
   toggleDrawer(false);
+  const url = location.origin + location.pathname + '#r=' + room;
+  try { await navigator.clipboard.writeText(url); toast('Invite link copied — it drops your friends straight into ' + room + '.'); }
+  catch (e) { prompt('Copy this link and send it to your friends:', url); }
 };
 
-/* ================= messages ================= */
+$('rail').onclick = async e => {
+  const b = e.target.closest('button'); if (!b) return;
+  toggleDrawer(false);
+  if (b.dataset.room) { if (b.dataset.room !== room) { try { await enterRoom(b.dataset.room); } catch (err) { toast("Couldn't open that room."); } } return; }
+  await leaveVoice(); await exitRoom(); $('rm').value = ''; room = ''; $('gRoom').classList.remove('hide'); $('rm').focus();
+};
+
+/* ================= channels ================= */
+function channelNames() {
+  const extra = Object.keys(chans).filter(c => !DEFAULT_CHANS.includes(c)).sort();
+  return [...DEFAULT_CHANS, ...extra];
+}
+function openChannel(c) {
+  chanUnsubs.forEach(f => { try { f(); } catch (e) {} }); chanUnsubs = [];
+  chan = c;
+  store.set('ping.chan.' + room, c);
+  msgs = new Map(); lastCount = 0; drewOnce = false;
+  clearCompose();
+  $('box').placeholder = `Message #${c}`;
+  const mine = c, mq = query(R(msgPath(c)), limitToLast(300));
+  const put = s => { if (chan !== mine) return; msgs.set(s.key, { id: s.key, ...s.val() }); markSeen(); draw(); };
+  chanUnsubs.push(onChildAdded(mq, put));
+  chanUnsubs.push(onChildChanged(mq, put));
+  chanUnsubs.push(onChildRemoved(mq, s => { if (chan !== mine) return; msgs.delete(s.key); lastCount = msgs.size; draw(); }));
+  markSeen();
+  draw();
+}
+function markSeen() {
+  seen[`${room}/${chan}`] = serverNow() + 1000;
+  clearTimeout(markSeen.t);
+  markSeen.t = setTimeout(() => store.set('ping.seen', JSON.stringify(seen)), 700);
+}
+function isUnread(c) {
+  const m = chans[c];
+  return c !== chan && m && m.by !== me.uid && (m.t || 0) > (seen[`${room}/${c}`] || 0);
+}
+$('chanList').onclick = e => {
+  const b = e.target.closest('[data-ch]'); if (!b) return;
+  toggleDrawer(false);
+  if (b.dataset.ch !== chan) openChannel(b.dataset.ch);
+};
+$('addChan').onclick = async () => {
+  const n = slug(prompt('New text channel name') || '', 20);
+  if (!n) return;
+  if (!chans[n] && !DEFAULT_CHANS.includes(n)) {
+    try { await set(R(`chans/${n}`), { t: serverTimestamp(), by: me.uid }); } catch (e) { return toast("Couldn't make that channel."); }
+  }
+  toggleDrawer(false);
+  openChannel(n);
+};
+
+/* ================= markdown ================= */
+function mentionsMe(t) {
+  if (!t || !me) return false;
+  const full = me.name.replace(/\s+/g, '').toLowerCase(), first = me.name.split(/\s+/)[0].toLowerCase();
+  return [...String(t).matchAll(/@([A-Za-z0-9_\-]{2,18})/g)].some(m => { const n = m[1].toLowerCase(); return n === full || n === first || n === 'everyone'; });
+}
+function md(t) {
+  let x = esc(t || '');
+  const hold = [];
+  // placeholders use "<" which can never survive esc() from user text
+  const keep = html => { hold.push(html); return '<#' + (hold.length - 1) + '#>'; };
+  x = x.replace(/```(?:[a-z]*\n)?([\s\S]+?)```/g, (m, c) => keep(`<pre>${c.replace(/^\n+|\n+$/g,'')}</pre>`));
+  x = x.replace(/`([^`\n]+)`/g, (m, c) => keep(`<code>${c}</code>`));
+  x = x.replace(/(https?:\/\/[^\s<]+[^\s<.,:;!?)\]])/g, u => keep(`<a href="${u}" target="_blank" rel="noopener">${u}</a>`));
+  x = x.replace(/\|\|([\s\S]+?)\|\|/g, '<span class="spoil">$1</span>');
+  x = x.replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>');
+  x = x.replace(/(^|[^*])\*([^*\n]+)\*/g, '$1<i>$2</i>');
+  x = x.replace(/__([^_\n]+)__/g, '<u>$1</u>');
+  x = x.replace(/~~([^~\n]+)~~/g, '<s>$1</s>');
+  x = x.replace(/^&gt;\s?(.*)(\n|$)/gm, '<blockquote>$1</blockquote>');
+  x = x.replace(/@([A-Za-z0-9_\-]{2,18})/g, (m, n) => `<span class="mention${mentionsMe(m)?' me':''}">@${n}</span>`);
+  return x.replace(/<#(\d+)#>/g, (m, i) => hold[+i]);
+}
+
+/* ================= render ================= */
+const safeImg = v => typeof v === 'string' && /^data:image\/(jpeg|jpg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v) ? v : '';
 function sorted() {
   return [...msgs.values()].sort((a,b) => (a.t||0) - (b.t||0) || (a.id > b.id ? 1 : -1));
 }
-
 let drawQueued = false;
 function draw() {
   if (drawQueued) return;
   drawQueued = true;
-  requestAnimationFrame(() => { drawQueued = false; render(); });
+  requestAnimationFrame(() => { drawQueued = false; if (me && room) render(); });
 }
-
 function render() {
   renderVoice();
-  const list = sorted(), now = Date.now(), stream = $('stream');
-  const pinned = !drewOnce || stream.scrollHeight - stream.scrollTop - stream.clientHeight < 100;
+  renderStream();
+  renderPeople();
+  renderSide();
+  renderStagebar();
+  renderTyping();
+}
 
+function renderStream() {
+  const list = sorted(), now = Date.now(), stream = $('stream');
+  const pinned = !drewOnce || stream.scrollHeight - stream.scrollTop - stream.clientHeight < 120;
+  let html = '';
   if (!list.length) {
-    stream.innerHTML = `<div class="empty"><b>Nobody's said anything yet</b>Share the code <strong>${esc(room)}</strong> with your friends, then say hi.</div>`;
+    html = `<div class="empty"><b>Welcome to #${esc(chan)}</b>${chan === 'general'
+      ? `Share the code <strong>${esc(room)}</strong> with your friends, then say hi.`
+      : 'This is the start of the channel.'}</div>`;
   } else {
-    let html = '', prev = null, day = '';
+    let prev = null, day = '';
     for (const m of list) {
       const t = m.t || now;
       const d = new Date(t).toDateString();
       if (d !== day) { day = d; html += `<div class="daymark">${d === new Date().toDateString() ? 'Today' : d}</div>`; prev = null; }
-      const stack = prev && prev.uid === m.uid && t - (prev.t||0) < 5*60000 && !m.img;
+      const stack = prev && prev.uid === m.uid && t - prev.t < 5*60000 && !m.img && !m.vid && !m.re;
       const rr = reacts[m.id] || {}, tally = {};
       for (const [uid, e] of Object.entries(rr)) (tally[e] = tally[e] || []).push(uid);
       const chips = Object.entries(tally).map(([e, who]) =>
-        `<button class="react${who.includes(me.uid)?' on':''}" data-react="${m.id}" data-e="${e}">${e} ${who.length}</button>`).join('');
-      const pick = openMsg === m.id
-        ? `<div class="picker">${EMOJI.map(e=>`<button data-react="${m.id}" data-e="${e}">${e}</button>`).join('')}${m.uid===me.uid?`<button data-del="${m.id}">🗑️</button>`:''}</div>` : '';
+        `<button class="react${who.includes(me.uid)?' on':''}" data-react="${m.id}" data-e="${esc(e)}">${esc(e)} ${who.length}</button>`).join('');
+      const edited = m.ed ? '<span class="edited">(edited)</span>' : '';
+      const cap = m.text ? `<div class="cap">${md(m.text)}${edited}</div>` : '';
       let content;
       if (m.img) {
-        const src = imgCache.get(m.img);
-        if (!src) fetchImg(m.img);
-        content = `<div class="photo">
-          <img class="${src?'':'ph'}" src="${src || m.thumb}" alt="Photo from ${esc(m.name)}" style="aspect-ratio:${m.w}/${m.h}" data-big="${src?m.img:''}" data-tap="${m.id}">
-          ${m.text ? `<div class="cap" data-tap="${m.id}">${link(m.text)}</div>` : ''}</div>`;
+        const src = safeImg(imgCache.get(m.img)); const thumb = safeImg(m.thumb);
+        if (!src) fetchMedia('images', m.img);
+        content = `<div class="photo"><img class="${src?'':'ph'}" src="${src || thumb}" alt="Photo from ${esc(m.name)}" style="aspect-ratio:${+m.w||4}/${+m.h||3}" data-big="${src?m.img:''}">${cap}</div>`;
+      } else if (m.vid) {
+        const url = vidCache.get(m.vid), busy = fetching.has(m.vid);
+        const poster = safeImg(m.poster);
+        content = `<div class="vidmsg">${url
+          ? `<video data-vid="${esc(m.vid)}" src="${url}" controls playsinline preload="metadata"${poster?` poster="${poster}"`:''}></video>`
+          : `<button class="vidload" data-vload="${esc(m.vid)}" style="aspect-ratio:${+m.w||16}/${+m.h||9};${poster?`background-image:url(${poster})`:''}"><span>${busy?'…':'▶'}</span><em>${busy?'Loading…':'Tap to play · ' + mb(m.vsize)}</em></button>`}${cap}</div>`;
       } else {
-        content = `<div class="bubble" data-tap="${m.id}">${link(m.text || '')}</div>`;
+        content = `<div class="bubble">${md(m.text)}${edited}</div>`;
       }
-      html += `<div class="msg${m.uid===me.uid?' mine':''}${stack?' stack':''}">
-        <div class="av" style="background:hsl(${m.hue} 70% 62%)">${esc(initials(m.name))}</div>
-        <div class="body">
-          ${stack?'':`<div class="who"><b style="color:hsl(${m.hue} 72% 76%)">${esc(m.name)}</b><span>${clock(t)}</span></div>`}
-          ${content}${chips?`<div class="reacts">${chips}</div>`:''}${pick}
+      const reline = m.re ? `<div class="replyline" data-jump="${esc(m.re.id)}"><div class="av" style="background:${avBg(+m.re.hue||220)}">${esc(initials(m.re.name))}</div><b>${esc(m.re.name)}</b> ${esc((m.re.text||'').slice(0,70))}</div>` : '';
+      const hue = +m.hue || 220;
+      html += `<div class="msg${m.uid===me.uid?' mine':''}${stack?' stack':''}${m.uid!==me.uid && mentionsMe(m.text)?' mentioned':''}" id="m-${esc(m.id)}" data-tap="${esc(m.id)}">
+        <div class="av" style="background:${avBg(hue)}">${esc(initials(m.name))}</div>
+        <div class="body">${reline}
+          ${stack ? '' : `<div class="who"><b style="color:hsl(${hue} 72% 74%)">${esc(m.name)}</b><span>${clock(t)}</span></div>`}
+          ${content}${chips?`<div class="reacts">${chips}</div>`:''}
         </div></div>`;
-      prev = { ...m, t };
+      prev = { uid: m.uid, t };
     }
-    stream.innerHTML = html;
   }
-  if (pinned) stream.scrollTop = stream.scrollHeight;
-  if (drewOnce && list.length > lastCount && list[list.length-1].uid !== me.uid) blip();
+  if (stream._html !== html) {
+    const keep = new Map();
+    stream.querySelectorAll('video[data-vid]').forEach(v => keep.set(v.dataset.vid, { el: v, playing: !v.paused }));
+    stream.innerHTML = html; stream._html = html;
+    stream.querySelectorAll('video[data-vid]').forEach(v => {
+      const k = keep.get(v.dataset.vid);
+      if (k) { v.replaceWith(k.el); if (k.playing) k.el.play().catch(()=>{}); }
+    });
+    if (pinned) stream.scrollTop = stream.scrollHeight;
+  }
+  if (drewOnce && list.length > lastCount) {
+    const last = list[list.length - 1];
+    if (last.uid !== me.uid) {
+      if (myStatus !== 'dnd') blip(mentionsMe(last.text));
+      if (document.hidden) { hiddenNew++; document.title = `(${hiddenNew}) Ping`; }
+    }
+  }
   lastCount = list.length; drewOnce = true;
+}
+document.addEventListener('visibilitychange', () => { if (!document.hidden) { hiddenNew = 0; document.title = 'Ping'; } });
 
-  const arr = Object.values(presence);
-  $('people').innerHTML = arr.map(u => {
+const visibleTo = u => u.uid === me.uid || u.status !== 'invisible';
+function renderPeople() {
+  const arr = Object.values(presence).filter(u => u && u.uid && visibleTo(u)).sort((a,b) => String(a.name).localeCompare(String(b.name)));
+  setHTML($('people'), arr.map(u => {
     const inV = u.voice && u.voice.in;
     const canInvite = inVoice && !inV && u.uid !== me.uid;
+    const st = STATUSES.some(s => s[0] === u.status) ? u.status : 'online';
+    const tags = [];
+    if (st === 'idle' || st === 'dnd' || (st === 'invisible' && u.uid === me.uid)) tags.push(statusLabel(st).toLowerCase());
+    if (inV) tags.push(u.voice.muted ? 'muted' : 'in voice');
+    if (u.share) tags.push('sharing');
     return `<div class="person">
-      <div class="av" style="background:hsl(${u.hue} 70% 62%)">${esc(initials(u.name))}</div>
-      <div class="nm">${esc(u.name)}${u.uid===me.uid?' <span class="tag">(you)</span>':''}${inV?` <span class="tag">· ${u.voice.muted?'muted':'in voice'}</span>`:''}</div>
-      ${canInvite?`<button class="invite" data-inv="${u.uid}">Invite</button>`:''}</div>`;
-  }).join('');
-  $('cnt').textContent = `${arr.length} ${arr.length === 1 ? 'person' : 'people'} here`;
-  $('rmeta').textContent = `${arr.length} online`;
-
-  const typers = arr.filter(u => u.uid !== me.uid && now - (u.typing||0) < 5000).map(u => u.name);
-  $('typing').textContent = typers.length === 1 ? `${typers[0]} is typing…` : typers.length > 1 ? `${typers.length} people are typing…` : '';
+      <div class="av st-${st}" style="background:${avBg(+u.hue||220)}">${esc(initials(u.name))}</div>
+      <div class="nm">${esc(u.name)}${u.uid===me.uid?' <span class="tag">(you)</span>':''}${tags.length?` <span class="tag">· ${tags.join(' · ')}</span>`:''}</div>
+      ${canInvite?`<button class="invite" data-inv="${esc(u.uid)}">Invite</button>`:''}</div>`;
+  }).join(''));
+  $('cnt').textContent = `Members — ${arr.length}`;
+  $('rmeta').textContent = `${room} · ${arr.length} online`;
 }
 
-let ac;
-function blip() {
+function renderSide() {
+  $('rtitle').textContent = chan;
+  $('dhead').textContent = room || 'room';
+  setHTML($('chanList'), channelNames().map(n =>
+    `<button class="chan${n===chan?' on':''}${isUnread(n)?' unread':''}" data-ch="${esc(n)}"><span class="hash">#</span><span>${esc(n)}</span></button>`).join(''));
+  setHTML($('rail'), recentRooms().map(r =>
+    `<button class="srv${r===room?' on':''}" data-room="${esc(r)}" title="${esc(r)}">${esc(r.replace(/-/g,'').slice(0,2).toUpperCase())}</button>`).join('') +
+    '<hr><button class="srv add" aria-label="Join another room">+</button>');
+  $('uName').textContent = me.name;
+  $('uAv').textContent = initials(me.name);
+  $('uAv').className = 'av st-' + myStatus;
+  $('uAv').style.background = avBg(me.hue);
+  $('uState').textContent = inVoice ? (muted ? 'Muted' : fx !== 'Normal' ? `Voice · ${fx}` : 'Voice connected') : statusLabel(myStatus);
+  $('micQuick').classList.toggle('on', muted);
+  $('chanVoice').classList.toggle('on', inVoice);
+  setHTML($('vlist'), voiceMembers().map(u => `<div class="vmem" data-u="${esc(u.uid)}"><div class="av" style="background:${avBg(+u.hue||220)}">${esc(initials(u.name))}</div><span>${esc(u.name)}</span>${u.voice.muted?' 🔇':''}${u.share?' 🖥':''}</div>`).join(''));
+}
+
+let sfxNote = null;
+function renderTyping() {
+  const now = Date.now();
+  if (sfxNote && now < sfxNote.until) { $('typing').textContent = sfxNote.text; return; }
+  const typers = Object.values(presence).filter(u => u && u.uid !== me.uid && visibleTo(u) && now - (u.typing||0) < 5000 && (u.tchan || 'general') === chan).map(u => u.name);
+  $('typing').textContent = typers.length === 1 ? `${typers[0]} is typing…` : typers.length > 1 ? `${typers.length} people are typing…` : '';
+}
+setInterval(() => { if (room && me) renderTyping(); }, 1500);
+
+function blip(loud) {
   try {
-    ac = ac || new (window.AudioContext || window.webkitAudioContext)();
-    const o = ac.createOscillator(), g = ac.createGain();
-    o.frequency.value = 740; o.type = 'sine';
-    g.gain.setValueAtTime(.0001, ac.currentTime);
-    g.gain.exponentialRampToValueAtTime(.05, ac.currentTime + .01);
-    g.gain.exponentialRampToValueAtTime(.0001, ac.currentTime + .22);
-    o.connect(g).connect(ac.destination); o.start(); o.stop(ac.currentTime + .24);
+    const c = actx(), t = c.currentTime;
+    (loud ? [880, 1175] : [740]).forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain(), s = t + i * .12;
+      o.frequency.value = f; o.type = 'sine';
+      g.gain.setValueAtTime(.0001, s);
+      g.gain.exponentialRampToValueAtTime(loud ? .09 : .05, s + .01);
+      g.gain.exponentialRampToValueAtTime(.0001, s + .22);
+      o.connect(g).connect(c.destination); o.start(s); o.stop(s + .24);
+    });
   } catch (e) {}
 }
 
+/* ================= sending ================= */
+function clearCompose() {
+  replyTo = null; editing = null;
+  $('replyBar').classList.add('hide');
+}
 async function send() {
-  const box = $('box'), text = box.value.trim();
+  const box = $('box'), text = box.value.trim().slice(0, 4000);
+  if (editing) {
+    if (!text && !(msgs.get(editing) || {}).img && !(msgs.get(editing) || {}).vid) return;
+    const id = editing;
+    box.value = ''; box.style.height = 'auto'; $('send').disabled = !pending; clearCompose();
+    try { await update(ref(db, `rooms/${room}/${msgPath(chan)}/${id}`), { text, ed: Date.now() }); }
+    catch (e) { toast("Couldn't save that edit."); }
+    return;
+  }
   if (!text && !pending) return;
+  const re = replyTo, p = pending, c = chan, path = msgPath(chan);
   box.value = ''; box.style.height = 'auto'; $('send').disabled = true;
+  clearCompose();
+  pending = null;
   const base = { uid: me.uid, name: me.name, hue: me.hue, t: Date.now(), text };
+  if (re) base.re = re;
   try {
-    if (pending) {
-      const p = pending; pending = null;
+    if (p && p.kind === 'img') {
       $('pend').classList.add('hide');
       const iRef = push(R('images'));
-      await set(iRef, p.full);
       imgCache.set(iRef.key, p.full);
-      await push(R('messages'), { ...base, img: iRef.key, thumb: p.thumb, w: p.w, h: p.h });
+      await set(iRef, p.full);
+      await push(R(path), { ...base, img: iRef.key, thumb: p.thumb, w: p.w, h: p.h });
+    } else if (p && p.kind === 'vid') {
+      $('pendTxt').textContent = 'Sending clip…';
+      const vRef = push(R('videos'));
+      vidCache.set(vRef.key, p.url);
+      await set(vRef, p.data);
+      $('pend').classList.add('hide');
+      await push(R(path), { ...base, vid: vRef.key, poster: p.poster || '', vsize: p.size, w: p.w || 16, h: p.h || 9 });
     } else {
-      await push(R('messages'), base);
+      await push(R(path), base);
     }
-    update(R(`presence/${me.uid}`), { typing: 0 });
-  } catch (e) { toast("That didn't send: " + (e.message || e)); }
+    set(R(`chans/${c}`), { t: serverTimestamp(), by: me.uid }).catch(()=>{});
+    update(R(`presence/${me.uid}`), { typing: 0 }).catch(()=>{});
+  } catch (e) { $('pend').classList.add('hide'); toast("That didn't send: " + (e.message || e)); }
 }
 $('send').onclick = send;
 
 async function react(mid, e) {
   const cur = (reacts[mid] || {})[me.uid];
-  openMsg = null;
   try {
     if (cur === e) await remove(R(`reacts/${mid}/${me.uid}`));
     else await set(R(`reacts/${mid}/${me.uid}`), e);
@@ -650,28 +1059,86 @@ async function react(mid, e) {
 }
 async function del(mid) {
   const m = msgs.get(mid);
-  openMsg = null;
   try {
     if (m && m.img) await remove(R(`images/${m.img}`));
-    await remove(R(`messages/${mid}`));
+    if (m && m.vid) await remove(R(`videos/${m.vid}`));
+    await remove(ref(db, `rooms/${room}/${msgPath(chan)}/${mid}`));
     await remove(R(`reacts/${mid}`));
-  } catch (e) {}
+  } catch (e) { toast("Couldn't delete that."); }
 }
 $('wipe').onclick = async () => {
-  if (!confirm('Delete every message and photo you sent in this room?')) return;
-  for (const m of [...msgs.values()]) if (m.uid === me.uid) await del(m.id);
   toggleDrawer(false);
+  if (!confirm(`Delete every message you sent in #${chan}?`)) return;
+  for (const m of [...msgs.values()]) if (m.uid === me.uid) await del(m.id);
 };
 
-/* ================= photos ================= */
-$('pic').onclick = () => $('file').click();
+/* ================= message actions ================= */
+function openActions(id) {
+  const m = msgs.get(id); if (!m) return;
+  actMsg = id;
+  $('actEmoji').innerHTML = EMOJI.map(e => `<button data-react="${esc(id)}" data-e="${e}">${e}</button>`).join('');
+  const mine = m.uid === me.uid;
+  $('actList').innerHTML = [
+    `<button data-a="reply">Reply</button>`,
+    mine ? `<button data-a="edit">${m.img || m.vid ? 'Edit caption' : 'Edit message'}</button>` : '',
+    m.text ? `<button data-a="copy">Copy text</button>` : '',
+    mine ? `<button data-a="del" class="danger">Delete message</button>` : '',
+    `<button data-a="close">Cancel</button>`].filter(Boolean).join('');
+  $('act').classList.remove('hide');
+}
+function closeActions() { $('act').classList.add('hide'); actMsg = null; }
+$('act').onclick = e => {
+  if (e.target === $('act')) return closeActions();
+  const r = e.target.closest('[data-react]');
+  if (r) { react(r.dataset.react, r.dataset.e); return closeActions(); }
+  const b = e.target.closest('[data-a]'); if (!b) return;
+  const m = msgs.get(actMsg), a = b.dataset.a;
+  closeActions(); if (!m) return;
+  if (a === 'reply') {
+    editing = null;
+    replyTo = { id: m.id, name: m.name, hue: m.hue, text: (m.text || (m.img ? '📷 Photo' : m.vid ? '🎬 Video' : '')).slice(0, 80) };
+    $('replyTxt').textContent = 'Replying to ' + m.name;
+    $('replyBar').classList.remove('hide'); $('box').focus();
+  } else if (a === 'edit') {
+    replyTo = null; editing = m.id;
+    $('box').value = m.text || ''; $('box').oninput();
+    $('replyTxt').textContent = 'Editing message';
+    $('replyBar').classList.remove('hide'); $('send').disabled = false; $('box').focus();
+  } else if (a === 'copy') {
+    navigator.clipboard.writeText(m.text || '').then(() => toast('Copied.')).catch(() => prompt('Copy:', m.text || ''));
+  } else if (a === 'del') {
+    if (confirm('Delete this message?')) del(m.id);
+  }
+};
+$('replyX').onclick = () => {
+  if (editing) { $('box').value = ''; $('send').disabled = !pending; }
+  clearCompose();
+};
+
+/* ================= photos & video clips ================= */
+$('pic').onclick = () => {
+  const sheet = document.createElement('div');
+  sheet.className = 'sheet';
+  sheet.innerHTML = `<div class="card"><h2>Send</h2>
+    <p class="lede">Clips have to stay under 4 MB — roughly ten seconds from a phone camera.</p>
+    <div class="duo"><button data-k="p">Photo</button><button data-k="v">Video</button></div>
+    <button class="btn-main" data-k="x" style="margin-top:12px">Cancel</button></div>`;
+  document.body.appendChild(sheet);
+  sheet.onclick = e => {
+    const b = e.target.closest('[data-k]');
+    if (!b && e.target !== sheet) return;
+    sheet.remove();
+    if (b && b.dataset.k === 'p') $('file').click();
+    if (b && b.dataset.k === 'v') $('vfile').click();
+  };
+};
 $('file').onchange = async e => {
   const f = e.target.files[0]; e.target.value = '';
   if (!f) return;
   $('pendTxt').textContent = 'Shrinking photo…';
   $('pend').classList.remove('hide');
   try {
-    pending = await squash(f);
+    pending = { kind: 'img', ...(await squash(f)) };
     $('pendImg').src = pending.thumb;
     $('pendTxt').textContent = 'Photo ready — add a caption or hit send';
     $('send').disabled = false;
@@ -680,6 +1147,44 @@ $('file').onchange = async e => {
     toast("That image couldn't be read. Try a JPG or PNG.");
   }
 };
+$('vfile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  if (f.size > MAX_VIDEO) return toast(`That clip is ${mb(f.size)}. Keep it under 4 MB — trim it to about 10 seconds.`);
+  $('pendTxt').textContent = 'Reading clip…';
+  $('pendImg').removeAttribute('src');
+  $('pend').classList.remove('hide');
+  try {
+    const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
+    const url = URL.createObjectURL(f);
+    const shot = await posterFrom(url).catch(() => ({}));
+    pending = { kind: 'vid', data, url, size: f.size, ...shot };
+    if (shot.poster) $('pendImg').src = shot.poster;
+    $('pendTxt').textContent = `Clip ready (${mb(f.size)}) — add a caption or hit send`;
+    $('send').disabled = false;
+  } catch (err) {
+    pending = null; $('pend').classList.add('hide');
+    toast("That video couldn't be read.");
+  }
+};
+function posterFrom(url) {
+  return new Promise((res, rej) => {
+    const v = document.createElement('video');
+    v.muted = true; v.playsInline = true; v.preload = 'auto'; v.src = url;
+    const fail = setTimeout(() => rej(new Error('timeout')), 5000);
+    v.onloadeddata = () => { try { v.currentTime = Math.min(0.2, (v.duration || 1) / 2); } catch (e) {} };
+    v.onseeked = () => {
+      clearTimeout(fail);
+      try {
+        const w = v.videoWidth, h = v.videoHeight, sc = Math.min(1, 320 / Math.max(w, h));
+        const c = document.createElement('canvas'); c.width = Math.round(w*sc); c.height = Math.round(h*sc);
+        c.getContext('2d').drawImage(v, 0, 0, c.width, c.height);
+        res({ poster: c.toDataURL('image/jpeg', 0.6), w, h });
+      } catch (e) { rej(e); }
+    };
+    v.onerror = () => { clearTimeout(fail); rej(new Error('decode')); };
+  });
+}
 $('pendX').onclick = () => { pending = null; $('pend').classList.add('hide'); $('send').disabled = !$('box').value.trim(); };
 
 async function squash(file) {
@@ -704,53 +1209,76 @@ function loadBitmap(file) {
     r.onerror = rej; r.readAsDataURL(file);
   });
 }
-async function fetchImg(id) {
-  if (imgCache.has(id) || fetching.has(id)) return;
-  fetching.add(id);
-  try { const s = await get(R(`images/${id}`)); if (s.exists()) { imgCache.set(id, s.val()); draw(); } }
-  catch (e) {}
+async function fetchMedia(kind, id) {
+  const cache = kind === 'images' ? imgCache : vidCache;
+  if (cache.has(id) || fetching.has(id)) return;
+  fetching.add(id); draw();
+  try {
+    const s = await get(R(`${kind}/${id}`));
+    if (s.exists()) {
+      let v = s.val();
+      if (kind === 'videos') {
+        if (typeof v !== 'string' || !/^data:[a-z0-9.+\/-]+;base64,/i.test(v)) throw new Error('bad clip');
+        v = URL.createObjectURL(await (await fetch(v)).blob());
+      } else if (!safeImg(v)) throw new Error('bad image');
+      cache.set(id, v);
+    } else if (kind === 'videos') toast('That clip was deleted.');
+    else imgCache.set(id, '');
+  } catch (e) { if (kind === 'videos') toast("Couldn't load that clip."); else imgCache.set(id, ''); }
   fetching.delete(id);
+  draw();
 }
 
 /* ================= voice ================= */
-function voiceMembers() { return Object.values(presence).filter(u => u.voice && u.voice.in); }
+function voiceMembers() { return Object.values(presence).filter(u => u && u.voice && u.voice.in); }
 
 async function joinVoice() {
-  if (inVoice) return;
+  if (inVoice || !room) return;
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
     return toast('This browser blocks microphone access here. Open the page directly in Safari or Chrome.');
   }
-  try {
-    local = await getMic();
-  } catch (e) {
+  try { local = await getMic(); }
+  catch (e) {
     return toast(e.name === 'NotAllowedError'
       ? 'Microphone permission was denied. Allow it in your browser settings for this site, then tap Join voice again.'
       : 'No microphone found: ' + e.name);
   }
   inVoice = true; muted = false;
   $('muteBtn').classList.remove('on');
+  try { actx(); } catch (e) {}
+  await buildFX();
   startLevels();
-  await update(R(`presence/${me.uid}`), { voice: { in:true, muted:false } });
+  await update(R(`presence/${me.uid}`), { voice: { in: true, muted: false } }).catch(()=>{});
   syncVoicePeers();
+  draw();
 }
 
 async function leaveVoice() {
   if (!inVoice) return;
   inVoice = false;
+  stopShare(true);
+  if (stageKind === 'screen') closeStage();
   for (const uid of [...peers.keys()]) await dropPeer(uid, true);
+  if (fxGraph) { fxGraph.stop(); fxGraph = null; fxOut = null; }
   if (local) { local.getTracks().forEach(t => t.stop()); local = null; }
   if (levelTimer) { clearInterval(levelTimer); levelTimer = null; }
-  myMeter = null;
-  if (room && me) { try { await update(R(`presence/${me.uid}`), { voice: { in:false, muted:false } }); await remove(R(`signals/${me.uid}`)); } catch (e) {} }
+  myMeter = null; muted = false;
+  if (room && me) { try { await update(R(`presence/${me.uid}`), { voice: { in: false, muted: false }, share: false }); await remove(R(`signals/${me.uid}`)); } catch (e) {} }
   draw();
 }
 
+function setMuteTracks() {
+  const on = !muted;
+  if (local) local.getAudioTracks().forEach(t => t.enabled = on);
+  if (fxOut) fxOut.getAudioTracks().forEach(t => t.enabled = on);
+}
 function toggleMute() {
   if (!inVoice || !local) return;
   muted = !muted;
-  local.getAudioTracks().forEach(t => t.enabled = !muted);
+  setMuteTracks();
   $('muteBtn').classList.toggle('on', muted);
-  update(R(`presence/${me.uid}`), { voice: { in:true, muted } });
+  update(R(`presence/${me.uid}`), { voice: { in: true, muted } }).catch(()=>{});
+  draw();
 }
 
 async function dropPeer(uid, clear) {
@@ -759,22 +1287,50 @@ async function dropPeer(uid, clear) {
     try { p.pc.close(); } catch (e) {}
     if (p.audio) { p.audio.srcObject = null; p.audio.remove(); }
     peers.delete(uid);
+    if (stageKind === 'screen' && stageUid === uid) closeStage();
   }
   if (clear && room) { try { await remove(R(`signals/${uid}/${me.uid}`)); } catch (e) {} }
 }
 
-function makePeer(uid) {
+function sendTrack() {
+  if (fxOut && fx !== 'Normal') return fxOut.getAudioTracks()[0];
+  return local && local.getAudioTracks()[0];
+}
+function videoSender(st) {
+  const tr = st.pc.getTransceivers().find(t => t.receiver && t.receiver.track && t.receiver.track.kind === 'video');
+  return tr && tr.sender;
+}
+function attachScreen(st) {
+  const s = videoSender(st);
+  if (s) s.replaceTrack(screen ? screen.getVideoTracks()[0] : null).catch(()=>{});
+}
+
+function makePeer(uid, offerer) {
   const pc = new RTCPeerConnection(RTC);
   const audio = document.createElement('audio');
   audio.autoplay = true; audio.playsInline = true; audio.className = 'hide';
   document.body.appendChild(audio);
   applyOutput(audio);
-  const st = { pc, audio, gotDesc: '', seen: new Set(), queue: [], meter: null };
+  const st = { pc, audio, gotDesc: '', seen: new Set(), queue: [], meter: null, video: null, audioSender: null };
   peers.set(uid, st);
-  if (local) local.getTracks().forEach(t => pc.addTrack(t, local));
+  const tr = sendTrack();
+  if (tr) st.audioSender = pc.addTrack(tr, local);
+  if (offerer) { try { pc.addTransceiver('video', { direction: 'sendrecv' }); } catch (e) {} attachScreen(st); }
   pc.onicecandidate = e => { if (e.candidate) push(R(`signals/${uid}/${me.uid}/cands`), e.candidate.toJSON()).catch(()=>{}); };
-  pc.ontrack = e => { audio.srcObject = e.streams[0]; audio.play().catch(()=>{}); meterStream(uid, e.streams[0]); };
-  pc.onconnectionstatechange = () => { if (pc.connectionState === 'failed') dropPeer(uid, false); renderVoice(); };
+  pc.ontrack = e => {
+    if (e.track.kind === 'video') {
+      st.video = e.track;
+      e.track.onunmute = () => { if (stageKind === 'screen' && stageUid === uid) openScreen(uid); };
+      return;
+    }
+    const s = (e.streams && e.streams[0]) || new MediaStream([e.track]);
+    audio.srcObject = s; audio.play().catch(()=>{});
+    meterStream(uid, s);
+  };
+  pc.onconnectionstatechange = () => {
+    if (pc.connectionState === 'failed') { dropPeer(uid, false); setTimeout(syncVoicePeers, 2000); }
+    renderVoice();
+  };
   return st;
 }
 
@@ -784,11 +1340,11 @@ async function syncVoicePeers() {
   for (const uid of [...peers.keys()]) if (!live.has(uid)) await dropPeer(uid, true);
   for (const uid of live) {
     if (peers.has(uid) || me.uid >= uid) continue;
-    const st = makePeer(uid);
+    const st = makePeer(uid, true);
     try {
       const offer = await st.pc.createOffer();
       await st.pc.setLocalDescription(offer);
-      await set(R(`signals/${uid}/${me.uid}/desc`), { type:'offer', sdp: st.pc.localDescription.sdp });
+      await set(R(`signals/${uid}/${me.uid}/desc`), { type: 'offer', sdp: st.pc.localDescription.sdp });
     } catch (e) { await dropPeer(uid, false); }
   }
   renderVoice();
@@ -798,16 +1354,20 @@ async function handleSignals(inbox) {
   if (!inVoice) return;
   for (const [from, box] of Object.entries(inbox)) {
     let st = peers.get(from);
-    if (!st && box.desc && box.desc.type === 'offer') st = makePeer(from);
+    if (!st && box.desc && box.desc.type === 'offer') st = makePeer(from, false);
     if (!st) continue;
     try {
       if (box.desc && box.desc.sdp !== st.gotDesc) {
         st.gotDesc = box.desc.sdp;
         await st.pc.setRemoteDescription(box.desc);
         if (box.desc.type === 'offer') {
+          st.pc.getTransceivers().forEach(t => {
+            if (t.receiver && t.receiver.track && t.receiver.track.kind === 'video' && t.direction !== 'sendrecv') { try { t.direction = 'sendrecv'; } catch (e) {} }
+          });
           const ans = await st.pc.createAnswer();
           await st.pc.setLocalDescription(ans);
-          await set(R(`signals/${from}/${me.uid}/desc`), { type:'answer', sdp: st.pc.localDescription.sdp });
+          await set(R(`signals/${from}/${me.uid}/desc`), { type: 'answer', sdp: st.pc.localDescription.sdp });
+          attachScreen(st);
         }
         for (const c of st.queue.splice(0)) { try { await st.pc.addIceCandidate(c); } catch (e) {} }
       }
@@ -823,51 +1383,47 @@ async function handleSignals(inbox) {
 }
 
 function meterStream(uid, stream) {
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    const an = audioCtx.createAnalyser(); an.fftSize = 512;
-    audioCtx.createMediaStreamSource(stream).connect(an);
-    const buf = new Uint8Array(an.frequencyBinCount);
-    const st = peers.get(uid);
-    if (st) st.meter = () => { an.getByteFrequencyData(buf); let s=0; for (const v of buf) s+=v; return s/buf.length; };
-  } catch (e) {}
+  const st = peers.get(uid);
+  const m = makeMeter(stream);
+  if (st && m) st.meter = m;
 }
 function startLevels() {
-  try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const an = audioCtx.createAnalyser(); an.fftSize = 512;
-    audioCtx.createMediaStreamSource(local).connect(an);
-    const buf = new Uint8Array(an.frequencyBinCount);
-    myMeter = () => { an.getByteFrequencyData(buf); let s=0; for (const v of buf) s+=v; return s/buf.length; };
-  } catch (e) {}
+  myMeter = makeMeter(local);
+  clearInterval(levelTimer);
   levelTimer = setInterval(() => {
     if (!inVoice) return;
-    const mark = (uid, lvl) => { const el = document.querySelector(`.vhead[data-u="${uid}"]`); if (el) el.classList.toggle('talk', lvl > 12); };
+    const mark = (uid, lvl) => {
+      const on = lvl > 12;
+      document.querySelectorAll(`.vhead[data-u="${CSS.escape(uid)}"]`).forEach(el => el.classList.toggle('talk', on));
+      document.querySelectorAll(`.vmem[data-u="${CSS.escape(uid)}"]`).forEach(el => el.classList.toggle('speaking', on));
+    };
     if (myMeter) mark(me.uid, muted ? 0 : myMeter());
     for (const [uid, st] of peers) if (st.meter) mark(uid, st.meter());
   }, 140);
 }
 
 function renderVoice() {
+  if (!me) return;
   const mem = voiceMembers();
   if (!inVoice) {
     $('vbar').classList.add('hide');
     $('jv').classList.remove('hide');
     $('jvtxt').textContent = mem.length
-      ? `${mem.map(m=>m.name).slice(0,3).join(', ')}${mem.length>3?` +${mem.length-3}`:''} in voice`
+      ? `${mem.map(m => m.name).slice(0,3).join(', ')}${mem.length > 3 ? ` +${mem.length-3}` : ''} in voice`
       : 'Voice channel is empty';
     return;
   }
   $('jv').classList.add('hide');
   $('vbar').classList.remove('hide');
-  $('vheads').innerHTML = mem.map(u => {
+  $('shareBtn').classList.toggle('live', !!screen);
+  $('muteBtn').classList.toggle('on', muted);
+  setHTML($('vheads'), mem.map(u => {
     const p = peers.get(u.uid);
-    const label = u.uid === me.uid ? 'you' : (p && p.pc.connectionState === 'connected' ? u.name.split(' ')[0] : 'linking…');
-    return `<div class="vhead" data-u="${u.uid}">
-      <div class="av" style="background:hsl(${u.hue} 70% 62%)">${esc(initials(u.name))}${u.voice.muted?'<span class="m">🔇</span>':''}</div>
+    const label = u.uid === me.uid ? 'you' : (p && p.pc.connectionState === 'connected' ? String(u.name).split(' ')[0] : 'linking…');
+    return `<div class="vhead" data-u="${esc(u.uid)}">
+      <div class="av" style="background:${avBg(+u.hue||220)}">${esc(initials(u.name))}${u.voice.muted?'<span class="m">🔇</span>':''}${u.share?'<span class="sh">🖥</span>':''}</div>
       <small>${esc(label)}</small></div>`;
-  }).join('');
+  }).join(''));
 }
 
 async function invite(uid) {
@@ -879,6 +1435,403 @@ async function invite(uid) {
 $('joinVoice').onclick = joinVoice;
 $('leaveVoice').onclick = leaveVoice;
 $('muteBtn').onclick = toggleMute;
+$('chanVoice').onclick = () => { toggleDrawer(false); inVoice ? leaveVoice() : joinVoice(); };
+$('micQuick').onclick = () => { if (!inVoice) return toast('Join voice first.'); toggleMute(); };
+
+/* ================= screen share ================= */
+async function toggleShare() {
+  if (screen) return stopShare();
+  if (!inVoice) return toast('Join voice first — your screen goes to everyone in the voice channel.');
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getDisplayMedia) {
+    return toast('Screen sharing works from a computer (Chrome, Edge, Firefox or Safari). Phones can watch, but not share.');
+  }
+  try {
+    screen = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 15, max: 30 } }, audio: false });
+  } catch (e) {
+    if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("Couldn't start sharing: " + e.name);
+    return;
+  }
+  const track = screen.getVideoTracks()[0];
+  try { track.contentHint = 'detail'; } catch (e) {}
+  track.onended = () => stopShare();
+  for (const st of peers.values()) attachScreen(st);
+  update(R(`presence/${me.uid}`), { share: true }).catch(()=>{});
+  openScreen(me.uid);
+  draw();
+}
+function stopShare(silent) {
+  if (!screen) return;
+  const s = screen; screen = null;
+  s.getTracks().forEach(t => t.stop());
+  for (const st of peers.values()) attachScreen(st);
+  if (stageKind === 'screen' && stageUid === me.uid) closeStage();
+  if (!silent && room) update(R(`presence/${me.uid}`), { share: false }).catch(()=>{});
+  draw();
+}
+$('shareBtn').onclick = toggleShare;
+
+function noticeShares(prev) {
+  for (const u of Object.values(presence)) {
+    if (!u || !u.share || u.uid === me.uid || (prev[u.uid] && prev[u.uid].share)) continue;
+    if (!inVoice) toast(`${u.name} is sharing their screen. Join voice to watch.`, joinVoice, 'Join voice');
+    else if (!stageKind) setTimeout(() => { if (!stageKind) openScreen(u.uid, true); }, 900);
+    else toast(`${u.name} is sharing their screen.`, () => openScreen(u.uid), 'Watch');
+  }
+  if (stageKind === 'screen' && stageUid !== me.uid && !(presence[stageUid] && presence[stageUid].share)) closeStage();
+}
+
+function openScreen(uid, quiet) {
+  let track = null;
+  if (uid === me.uid) track = screen && screen.getVideoTracks()[0];
+  else { const st = peers.get(uid); track = st && st.video; }
+  if (!track) { if (!quiet) toast('Still connecting to their screen — try again in a moment.'); return; }
+  destroyYT();
+  stageKind = 'screen'; stageUid = uid;
+  $('stageBody').innerHTML = '<video autoplay playsinline muted></video>';
+  const v = $('stageBody').firstElementChild;
+  v.srcObject = new MediaStream([track]);
+  v.play().catch(()=>{});
+  $('stageWho').textContent = uid === me.uid ? 'Your screen (others see this)' : `${(presence[uid] || {}).name || 'Someone'}'s screen`;
+  $('stage').classList.remove('hide');
+  draw();
+}
+function closeStage() {
+  destroyYT();
+  stageKind = null; stageUid = null;
+  $('stageBody').innerHTML = '';
+  $('stage').classList.add('hide');
+  draw();
+}
+$('stageX').onclick = () => { if (stageKind === 'yt' && watch) watchHidden = watch.vid; closeStage(); };
+$('stageFs').onclick = () => {
+  const st = $('stage'), v = $('stageBody').querySelector('video');
+  if (document.fullscreenElement) return document.exitFullscreen().catch(()=>{});
+  if (st.requestFullscreen) st.requestFullscreen().catch(() => { if (v && v.webkitEnterFullscreen) v.webkitEnterFullscreen(); });
+  else if (v && v.webkitEnterFullscreen) v.webkitEnterFullscreen();
+  else toast("This browser won't go full screen here. Turn your phone sideways instead.");
+};
+
+function renderStagebar() {
+  const items = [];
+  if (watch && stageKind !== 'yt') items.push(`<button data-stage="yt">📺 ${esc(watch.starter || watch.name || 'Someone')} started a video · Watch</button>`);
+  for (const u of Object.values(presence)) {
+    if (!u || !u.share || u.uid === me.uid || (stageKind === 'screen' && stageUid === u.uid)) continue;
+    items.push(`<button data-stage="screen" data-u="${esc(u.uid)}">🖥 ${esc(u.name)} is sharing · ${inVoice ? 'Watch' : 'Join voice to watch'}</button>`);
+  }
+  setHTML($('stagebar'), items.join(''));
+  $('stagebar').classList.toggle('hide', !items.length);
+}
+$('stagebar').onclick = async e => {
+  const b = e.target.closest('[data-stage]'); if (!b) return;
+  if (b.dataset.stage === 'yt') return openWatch();
+  if (!inVoice) { await joinVoice(); return; }
+  openScreen(b.dataset.u);
+};
+
+/* ================= watch together ================= */
+let watch = null, watchLoaded = false, watchHidden = '', yt = null, ytOk = false, ytVid = '', ytApplyUntil = 0, ytUserUntil = 0, ytDrift = null, ytApi = null;
+function loadYT() {
+  if (window.YT && window.YT.Player) return Promise.resolve();
+  if (ytApi) return ytApi;
+  ytApi = new Promise((res, rej) => {
+    const prevReady = window.onYouTubeIframeAPIReady;
+    window.onYouTubeIframeAPIReady = () => { if (prevReady) try { prevReady(); } catch (e) {} res(); };
+    const s = document.createElement('script');
+    s.src = 'https://www.youtube.com/iframe_api';
+    s.onerror = () => { ytApi = null; rej(new Error('blocked')); };
+    document.head.appendChild(s);
+    setTimeout(() => { if (!(window.YT && window.YT.Player)) { ytApi = null; rej(new Error('timeout')); } }, 15000);
+  });
+  return ytApi;
+}
+const targetPos = () => !watch ? 0 : watch.state === 'play'
+  ? (+watch.pos || 0) + Math.max(0, (serverNow() - (+watch.at || serverNow())) / 1000)
+  : (+watch.pos || 0);
+
+function onWatch(v) {
+  const prev = watch;
+  watch = v && /^[A-Za-z0-9_-]{11}$/.test(v.vid || '') ? v : null;
+  const firstLoad = !watchLoaded; watchLoaded = true;
+  if (!watch) { if (stageKind === 'yt') closeStage(); else draw(); return; }
+  const isNew = !prev || prev.vid !== watch.vid;
+  if (stageKind === 'yt') { syncPlayer(); draw(); return; }
+  const fresh = serverNow() - (+watch.at || 0) < 20 * 60000;
+  if (isNew && (!firstLoad || fresh) && watchHidden !== watch.vid) {
+    if (!stageKind) openWatch();
+    else toast(`${watch.starter || watch.name || 'Someone'} started a video.`, openWatch, 'Watch');
+  }
+  draw();
+}
+
+async function openWatch() {
+  if (!watch) return;
+  watchHidden = '';
+  try { await loadYT(); } catch (e) { return toast("YouTube's player couldn't load. An ad-blocker or school network might be blocking it."); }
+  if (!watch) return;
+  if (stageKind === 'yt' && yt) return syncPlayer();
+  destroyYT();
+  stageKind = 'yt'; stageUid = null;
+  $('stageBody').innerHTML = '<div id="ytp"></div>';
+  $('stageWho').textContent = `Watching together · started by ${watch.starter || watch.name || 'someone'}`;
+  $('stage').classList.remove('hide');
+  ytVid = watch.vid; ytOk = false;
+  ytApplyUntil = Date.now() + 2500;
+  yt = new YT.Player('ytp', {
+    videoId: watch.vid, width: '100%', height: '100%',
+    playerVars: { playsinline: 1, rel: 0, start: Math.floor(targetPos()) },
+    events: {
+      onReady: () => { ytOk = true; syncPlayer(); },
+      onStateChange: onYTState,
+      onError: e => toast(e.data === 101 || e.data === 150 ? "The uploader doesn't allow this video to play outside YouTube. Try another link." : "YouTube couldn't play that video.")
+    }
+  });
+  clearInterval(ytDrift);
+  ytDrift = setInterval(syncPlayer, 4000);
+  draw();
+}
+function destroyYT() {
+  clearInterval(ytDrift); ytDrift = null;
+  if (yt && yt.destroy) { try { yt.destroy(); } catch (e) {} }
+  yt = null; ytOk = false; ytVid = '';
+}
+function syncPlayer() {
+  if (!yt || !ytOk || !watch || !window.YT) return;
+  const S = YT.PlayerState;
+  if (ytVid === watch.vid && Date.now() < ytUserUntil) return; // someone here just pressed play/pause/seek
+  if (ytVid !== watch.vid) {
+    ytVid = watch.vid; ytApplyUntil = Date.now() + 2500;
+    $('stageWho').textContent = `Watching together · started by ${watch.starter || watch.name || 'someone'}`;
+    if (watch.state === 'play') yt.loadVideoById(watch.vid, targetPos()); else yt.cueVideoById(watch.vid, targetPos());
+    return;
+  }
+  const cur = yt.getCurrentTime() || 0, want = targetPos(), st = yt.getPlayerState(), dur = yt.getDuration() || 0;
+  if (dur && want >= dur - 1 && (st === S.ENDED || cur >= dur - 2)) return;
+  let acted = false;
+  if (Math.abs(cur - want) > 2.5) { yt.seekTo(want, true); acted = true; }
+  if (watch.state === 'play' && st !== S.PLAYING && st !== S.BUFFERING) { yt.playVideo(); acted = true; }
+  if (watch.state === 'pause' && (st === S.PLAYING || st === S.BUFFERING)) { yt.pauseVideo(); acted = true; }
+  if (acted) ytApplyUntil = Date.now() + 1500;
+}
+function onYTState(e) {
+  if (!watch || !yt || !window.YT || Date.now() < ytApplyUntil) return;
+  const S = YT.PlayerState, pos = yt.getCurrentTime() || 0;
+  if (e.data === S.PLAYING || e.data === S.PAUSED || e.data === S.BUFFERING) ytUserUntil = Date.now() + 1200;
+  if (e.data === S.PLAYING) {
+    if (watch.state === 'play' && Math.abs(targetPos() - pos) < 2.5) return;
+    writeWatch('play', pos);
+  } else if (e.data === S.PAUSED) {
+    setTimeout(() => {
+      if (!yt || !watch || yt.getPlayerState() !== S.PAUSED) return;
+      const p = yt.getCurrentTime() || 0;
+      if (watch.state === 'pause' && Math.abs((+watch.pos || 0) - p) < 2.5) return;
+      writeWatch('pause', p);
+    }, 400);
+  } else if (e.data === S.ENDED) {
+    if (watch.state === 'play') writeWatch('pause', yt.getDuration() || pos);
+  }
+}
+function writeWatch(state, pos) {
+  if (!room) return;
+  update(R('watch'), { state, pos: Math.max(0, pos), at: serverTimestamp(), by: me.uid, name: me.name }).catch(()=>{});
+}
+$('watchBtn').onclick = () => { toggleDrawer(false); $('watch').classList.remove('hide'); };
+$('watchDone').onclick = () => $('watch').classList.add('hide');
+$('watch').onclick = e => { if (e.target === $('watch')) $('watch').classList.add('hide'); };
+$('ytStart').onclick = async () => {
+  const m = String($('ytUrl').value).match(/(?:v=|youtu\.be\/|embed\/|shorts\/|live\/)([A-Za-z0-9_-]{11})/);
+  if (!m) return toast("That doesn't look like a YouTube link.");
+  $('watch').classList.add('hide');
+  $('ytUrl').value = '';
+  watchHidden = '';
+  try {
+    await set(R('watch'), { vid: m[1], state: 'play', pos: 0, at: serverTimestamp(), by: me.uid, name: me.name, starter: me.name });
+    await push(R(msgPath(chan)), { uid: me.uid, name: me.name, hue: me.hue, t: Date.now(), text: `📺 started a watch party: https://youtu.be/${m[1]}` });
+    set(R(`chans/${chan}`), { t: serverTimestamp(), by: me.uid }).catch(()=>{});
+  } catch (e) { toast("Couldn't start it: " + (e.message || e)); }
+};
+$('ytStop').onclick = async () => {
+  $('watch').classList.add('hide');
+  try { await remove(R('watch')); } catch (e) {}
+  if (stageKind === 'yt') closeStage();
+};
+
+/* ================= soundboard ================= */
+function sfxBus(c) { const g = c.createGain(); g.gain.value = Math.max(0.05, prefs.vol); g.connect(c.destination); return g; }
+function pnoise(sec){ const c=actx(), b=c.createBuffer(1,Math.floor(c.sampleRate*sec),c.sampleRate), d=b.getChannelData(0);
+  for(let i=0;i<d.length;i++) d[i]=Math.random()*2-1; return b; }
+function penv(g,t,peak,atk,dur){ g.gain.setValueAtTime(0.0001,t); g.gain.exponentialRampToValueAtTime(peak,t+atk);
+  g.gain.exponentialRampToValueAtTime(0.0001,t+dur); }
+const SFX = {
+  Airhorn: () => { const c=actx(), D=sfxBus(c), t=c.currentTime, g=c.createGain(), f=c.createBiquadFilter();
+    f.type='lowpass'; f.frequency.value=2600; g.connect(D); f.connect(g);
+    [0,7,-5].forEach(d=>{ const o=c.createOscillator(); o.type='sawtooth';
+      o.frequency.setValueAtTime(415+d,t); o.frequency.setValueAtTime(392+d,t+0.42);
+      o.connect(f); o.start(t); o.stop(t+0.95); }); penv(g,t,0.5,0.03,0.9); },
+  Boom: () => { const c=actx(), D=sfxBus(c), t=c.currentTime, g=c.createGain(), o=c.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(150,t); o.frequency.exponentialRampToValueAtTime(32,t+0.55);
+    o.connect(g); g.connect(D); penv(g,t,0.85,0.01,0.7); o.start(t); o.stop(t+0.75); },
+  Rimshot: () => { const c=actx(), D=sfxBus(c), t=c.currentTime; [[0,320],[0.11,250],[0.22,180]].forEach(([d,f])=>{
+    const g=c.createGain(), o=c.createOscillator(); o.type='triangle';
+    o.frequency.setValueAtTime(f,t+d); o.frequency.exponentialRampToValueAtTime(f*0.55,t+d+0.12);
+    o.connect(g); g.connect(D); penv(g,t+d,0.5,0.005,0.14); o.start(t+d); o.stop(t+d+0.16); }); },
+  Trombone: () => { const c=actx(), D=sfxBus(c), t=c.currentTime, g=c.createGain(), o=c.createOscillator(), f=c.createBiquadFilter();
+    o.type='sawtooth'; f.type='lowpass'; f.frequency.value=1400;
+    [[0,330],[0.28,294],[0.56,262],[0.84,196]].forEach(([d,hz])=>o.frequency.setValueAtTime(hz,t+d));
+    o.frequency.exponentialRampToValueAtTime(150,t+1.35);
+    o.connect(f); f.connect(g); g.connect(D); penv(g,t,0.4,0.05,1.45); o.start(t); o.stop(t+1.5); },
+  Scratch: () => { const c=actx(), D=sfxBus(c), t=c.currentTime, n=c.createBufferSource(), g=c.createGain(), f=c.createBiquadFilter();
+    n.buffer=pnoise(0.5); f.type='bandpass'; f.Q.value=6;
+    f.frequency.setValueAtTime(900,t); f.frequency.linearRampToValueAtTime(2600,t+0.12);
+    f.frequency.linearRampToValueAtTime(600,t+0.26); f.frequency.linearRampToValueAtTime(2200,t+0.38);
+    n.playbackRate.setValueAtTime(1.6,t); n.playbackRate.linearRampToValueAtTime(0.5,t+0.4);
+    n.connect(f); f.connect(g); g.connect(D); penv(g,t,0.4,0.01,0.42); n.start(t); },
+  Laser: () => { const c=actx(), D=sfxBus(c), t=c.currentTime, g=c.createGain(), o=c.createOscillator(); o.type='square';
+    o.frequency.setValueAtTime(1500,t); o.frequency.exponentialRampToValueAtTime(160,t+0.3);
+    o.connect(g); g.connect(D); penv(g,t,0.22,0.005,0.34); o.start(t); o.stop(t+0.36); },
+  Pop: () => { const c=actx(), D=sfxBus(c), t=c.currentTime, g=c.createGain(), o=c.createOscillator(); o.type='sine';
+    o.frequency.setValueAtTime(720,t); o.frequency.exponentialRampToValueAtTime(240,t+0.09);
+    o.connect(g); g.connect(D); penv(g,t,0.45,0.004,0.12); o.start(t); o.stop(t+0.14); },
+  Whoosh: () => { const c=actx(), D=sfxBus(c), t=c.currentTime, n=c.createBufferSource(), g=c.createGain(), f=c.createBiquadFilter();
+    n.buffer=pnoise(0.9); f.type='bandpass'; f.Q.value=2;
+    f.frequency.setValueAtTime(300,t); f.frequency.exponentialRampToValueAtTime(4200,t+0.35);
+    f.frequency.exponentialRampToValueAtTime(400,t+0.8);
+    n.connect(f); f.connect(g); g.connect(D); penv(g,t,0.32,0.06,0.82); n.start(t); },
+  Fanfare: () => { const c=actx(), D=sfxBus(c), t=c.currentTime; [[0,523],[0.14,659],[0.28,784],[0.42,1046]].forEach(([d,hz])=>{
+    const g=c.createGain(), o=c.createOscillator(); o.type='triangle'; o.frequency.value=hz;
+    o.connect(g); g.connect(D); penv(g,t+d,0.3,0.02,d===0.42?0.55:0.2); o.start(t+d); o.stop(t+d+0.6); }); }
+};
+const PAD_ICON = { Airhorn:'📣', Boom:'💥', Rimshot:'🥁', Trombone:'🎺', Scratch:'💿', Laser:'🔫', Pop:'🫧', Whoosh:'🌀', Fanfare:'🎉' };
+$('pads').innerHTML = Object.keys(SFX).map(n => `<button class="pad" data-sfx="${n}"><small>${PAD_ICON[n]}</small>${n}</button>`).join('');
+function playSfx(n) { try { if (SFX[n]) SFX[n](); } catch (e) {} }
+let lastSfx = 0;
+const playedSfx = new Set();
+$('pads').onclick = e => {
+  const b = e.target.closest('[data-sfx]'); if (!b) return;
+  const now = Date.now();
+  if (now - lastSfx < 600) return;
+  lastSfx = now;
+  const n = b.dataset.sfx;
+  playSfx(n);
+  b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 180);
+  if (!room) return;
+  const r = push(R('sfx'));
+  playedSfx.add(r.key);
+  set(r, { n, uid: me.uid, name: me.name, t: serverTimestamp() })
+    .then(() => setTimeout(() => remove(r).catch(()=>{}), 8000)).catch(()=>{});
+};
+function onSfx(key, v) {
+  if (playedSfx.has(key)) return;
+  playedSfx.add(key);
+  if (v.uid === me.uid || !SFX[v.n] || serverNow() - (+v.t || 0) > 6000 || myStatus === 'dnd') return;
+  playSfx(v.n);
+  sfxNote = { text: `🔊 ${v.name || 'Someone'} played ${v.n}`, until: Date.now() + 2500 };
+  renderTyping();
+}
+
+/* ================= voice changer ================= */
+const FX = ['Normal','Deep','Chipmunk','Robot','Telephone','Megaphone','Cave'];
+let fx = FX.includes(store.get('ping.fx')) ? store.get('ping.fx') : 'Normal';
+let fxGraph = null, fxOut = null;
+
+// Delay-line pitch shifter (two crossfaded modulated delays).
+function jungle(c, made, srcs, mult) {
+  const bufferTime = 0.1, fadeTime = 0.05, sr = c.sampleRate, len = Math.floor(bufferTime * sr);
+  const ramp = up => { const b = c.createBuffer(1, len, sr), p = b.getChannelData(0); for (let i = 0; i < len; i++) p[i] = up ? (len - i) / len : i / len; return b; };
+  const fadeBuf = (() => { const b = c.createBuffer(1, len, sr), p = b.getChannelData(0), fl = Math.floor(fadeTime * sr);
+    for (let i = 0; i < len; i++) p[i] = i < fl ? Math.sqrt(i / fl) : i >= len - fl ? Math.sqrt(1 - (i - (len - fl)) / fl) : 1; return b; })();
+  const node = x => (made.push(x), x);
+  const input = node(c.createGain()), output = node(c.createGain());
+  const modBuf = ramp(mult > 0);
+  const m1 = c.createBufferSource(), m2 = c.createBufferSource(), f1 = c.createBufferSource(), f2 = c.createBufferSource();
+  [m1, m2].forEach(s => { s.buffer = modBuf; s.loop = true; });
+  [f1, f2].forEach(s => { s.buffer = fadeBuf; s.loop = true; });
+  srcs.push(m1, m2, f1, f2);
+  const g1 = node(c.createGain()), g2 = node(c.createGain());
+  const depth = 0.5 * bufferTime * Math.abs(mult);
+  g1.gain.value = depth; g2.gain.value = depth;
+  const d1 = node(c.createDelay(1)), d2 = node(c.createDelay(1));
+  m1.connect(g1); m2.connect(g2); g1.connect(d1.delayTime); g2.connect(d2.delayTime);
+  const x1 = node(c.createGain()), x2 = node(c.createGain());
+  x1.gain.value = 0; x2.gain.value = 0;
+  f1.connect(x1.gain); f2.connect(x2.gain);
+  input.connect(d1); input.connect(d2); d1.connect(x1); d2.connect(x2); x1.connect(output); x2.connect(output);
+  const t = c.currentTime + 0.05, t2 = t + bufferTime - fadeTime;
+  m1.start(t); f1.start(t); m2.start(t2); f2.start(t2);
+  return { input, output };
+}
+
+function makeGraph(c, kind) {
+  const made = [], srcs = [];
+  const node = x => (made.push(x), x);
+  const input = node(c.createGain()), output = node(c.createGain());
+  const filt = (type, f, q, g) => { const b = node(c.createBiquadFilter()); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; if (g != null) b.gain.value = g; return b; };
+  const shaper = k => { const s = node(c.createWaveShaper()), N = 2048, cv = new Float32Array(N); for (let i = 0; i < N; i++) { const x = i * 2 / N - 1; cv[i] = (1 + k) * x / (1 + k * Math.abs(x)); } s.curve = cv; return s; };
+  const chain = (...n) => { for (let i = 0; i < n.length - 1; i++) n[i].connect(n[i + 1]); };
+  switch (kind) {
+    case 'Deep': { const j = jungle(c, made, srcs, -0.65); chain(input, j.input); chain(j.output, filt('lowshelf', 200, null, 6), output); output.gain.value = 1.4; break; }
+    case 'Chipmunk': { const j = jungle(c, made, srcs, 1.4); chain(input, j.input); chain(j.output, filt('highpass', 180, 0.7), output); output.gain.value = 1.1; break; }
+    case 'Robot': {
+      const rm = node(c.createGain()); rm.gain.value = 0.2;
+      const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = 55; o.connect(rm.gain); srcs.push(o); o.start();
+      const d = node(c.createDelay(0.1)); d.delayTime.value = 0.009;
+      const fb = node(c.createGain()); fb.gain.value = 0.5;
+      chain(input, rm); rm.connect(d); d.connect(fb); fb.connect(d); rm.connect(output); d.connect(output);
+      output.gain.value = 1.5; break;
+    }
+    case 'Telephone': chain(input, filt('highpass', 450, 0.9), filt('lowpass', 2900, 0.9), shaper(4), output); output.gain.value = 1.3; break;
+    case 'Megaphone': chain(input, filt('highpass', 700, 0.8), filt('peaking', 1800, 1, 9), shaper(14), filt('lowpass', 4200, 0.8), output); output.gain.value = 0.8; break;
+    case 'Cave': {
+      const len = Math.floor(c.sampleRate * 2.6), ir = c.createBuffer(2, len, c.sampleRate);
+      for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
+      const conv = node(c.createConvolver()); conv.buffer = ir;
+      const pre = node(c.createDelay(0.2)); pre.delayTime.value = 0.03;
+      const wet = node(c.createGain()); wet.gain.value = 0.7;
+      const dry = node(c.createGain()); dry.gain.value = 0.8;
+      chain(input, dry, output); chain(input, pre, conv, wet, output); break;
+    }
+    default: chain(input, output);
+  }
+  return { input, output, stop() { srcs.forEach(s => { try { s.stop(); } catch (e) {} }); made.forEach(x => { try { x.disconnect(); } catch (e) {} }); } };
+}
+
+async function applySendTrack() {
+  const t = sendTrack(); if (!t) return;
+  for (const st of peers.values()) {
+    if (st.audioSender) { try { await st.audioSender.replaceTrack(t); } catch (e) {} }
+  }
+}
+async function buildFX() {
+  const old = fxGraph;
+  fxGraph = null; fxOut = null;
+  if (local && fx !== 'Normal') {
+    try {
+      const c = actx();
+      const src = c.createMediaStreamSource(local), dest = c.createMediaStreamDestination();
+      const g = makeGraph(c, fx);
+      src.connect(g.input); g.output.connect(dest);
+      fxOut = dest.stream;
+      fxGraph = { stop() { try { src.disconnect(); } catch (e) {} g.stop(); dest.stream.getTracks().forEach(t => t.stop()); } };
+    } catch (e) { toast('Voice changer failed on this browser: ' + e.message); }
+  }
+  setMuteTracks();
+  await applySendTrack();
+  if (old) old.stop();
+}
+function paintFX() { $('fxList').innerHTML = FX.map(f => `<button data-fx="${f}" class="${f === fx ? 'on' : ''}">${f}</button>`).join(''); }
+paintFX();
+$('fxList').onclick = async e => {
+  const b = e.target.closest('[data-fx]'); if (!b) return;
+  fx = b.dataset.fx; store.set('ping.fx', fx); paintFX();
+  $('fxHint').textContent = fx === 'Normal' ? 'Back to your own voice.'
+    : inVoice ? `${fx} is on — everyone in voice hears it now. Check it with Sound check → Hear myself (headphones).`
+    : `${fx} selected — it kicks in when you join voice.`;
+  if (inVoice) await buildFX();
+  draw();
+};
+function openBoard() { toggleDrawer(false); $('board').classList.remove('hide'); }
+$('boardDone').onclick = () => $('board').classList.add('hide');
+$('board').onclick = e => { if (e.target === $('board')) $('board').classList.add('hide'); };
+$('boardBtn').onclick = openBoard; $('boardBtn2').onclick = openBoard;
 
 /* ================= sound check ================= */
 const prefs = Object.assign({ inId:'', outId:'', vol:1, ec:true, ns:true },
@@ -907,10 +1860,9 @@ function applyOutputAll() {
 }
 function makeMeter(stream) {
   try {
-    audioCtx = audioCtx || new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') audioCtx.resume();
-    const an = audioCtx.createAnalyser(); an.fftSize = 512;
-    audioCtx.createMediaStreamSource(stream).connect(an);
+    const c = actx();
+    const an = c.createAnalyser(); an.fftSize = 512;
+    c.createMediaStreamSource(stream).connect(an);
     const buf = new Uint8Array(an.frequencyBinCount);
     return () => { an.getByteFrequencyData(buf); let s = 0; for (const v of buf) s += v; return s / buf.length; };
   } catch (e) { return null; }
@@ -1011,7 +1963,7 @@ function stopMonitor() {
 $('monBtn').onclick = () => {
   const m = $('mon');
   if ($('monBtn').classList.contains('on')) return stopMonitor();
-  const src = local || testStream;
+  const src = (inVoice && fxOut) || local || testStream;
   if (!src) return;
   m.srcObject = src; m.volume = prefs.vol; m.muted = false;
   m.play().catch(()=>{});
@@ -1037,14 +1989,10 @@ $('inSel').onchange = async e => {
   try {
     const fresh = await getMic();
     if (inVoice) {
-      const track = fresh.getAudioTracks()[0];
-      track.enabled = !muted;
-      for (const st of peers.values()) {
-        const sender = st.pc.getSenders().find(x => x.track && x.track.kind === 'audio');
-        if (sender) await sender.replaceTrack(track);
-      }
-      if (local) local.getTracks().forEach(t => t.stop());
+      const old = local;
       local = fresh;
+      await buildFX();
+      if (old) old.getTracks().forEach(t => t.stop());
       myMeter = makeMeter(local);
     } else {
       if (testStream) testStream.getTracks().forEach(t => t.stop());
@@ -1078,11 +2026,14 @@ $('sndBtn2').onclick = openSound;
 const box = $('box');
 box.oninput = () => {
   box.style.height = 'auto'; box.style.height = Math.min(box.scrollHeight, 120) + 'px';
-  $('send').disabled = !box.value.trim() && !pending;
+  $('send').disabled = !box.value.trim() && !pending && !editing;
   const now = Date.now();
-  if (box.value.trim() && now > typingUntil && room) { typingUntil = now + 3500; update(R(`presence/${me.uid}`), { typing: now }).catch(()=>{}); }
+  if (box.value.trim() && now > typingUntil && room && !editing) { typingUntil = now + 3500; update(R(`presence/${me.uid}`), { typing: now, tchan: chan }).catch(()=>{}); }
 };
-box.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 760) { e.preventDefault(); send(); } };
+box.onkeydown = e => {
+  if (e.key === 'Enter' && !e.shiftKey && window.innerWidth >= 760) { e.preventDefault(); send(); }
+  if (e.key === 'Escape' && (editing || replyTo)) $('replyX').onclick();
+};
 
 $('stream').onclick = e => {
   const big = e.target.closest('[data-big]');
@@ -1094,9 +2045,19 @@ $('stream').onclick = e => {
     document.body.appendChild(lb);
     return;
   }
+  const vl = e.target.closest('[data-vload]'); if (vl) return fetchMedia('videos', vl.dataset.vload);
   const r = e.target.closest('[data-react]'); if (r) return react(r.dataset.react, r.dataset.e);
-  const d = e.target.closest('[data-del]'); if (d) return del(d.dataset.del);
-  const b = e.target.closest('[data-tap]'); if (b) { openMsg = openMsg === b.dataset.tap ? null : b.dataset.tap; draw(); }
+  const j = e.target.closest('[data-jump]');
+  if (j) {
+    const el = document.getElementById('m-' + j.dataset.jump);
+    if (el) { el.scrollIntoView({ block: 'center', behavior: 'smooth' }); el.classList.add('flash'); setTimeout(() => el.classList.remove('flash'), 1400); }
+    else toast('That message is too old to jump to.');
+    return;
+  }
+  const sp = e.target.closest('.spoil'); if (sp) return sp.classList.toggle('open');
+  if (e.target.closest('a, video, button, img, pre')) return;
+  if (getSelection && String(getSelection()).length) return;
+  const b = e.target.closest('[data-tap]'); if (b) openActions(b.dataset.tap);
 };
 $('people').onclick = e => { const i = e.target.closest('[data-inv]'); if (i) invite(i.dataset.inv); };
 
@@ -1104,26 +2065,25 @@ const drawer = $('drawer'), scrim = $('scrim');
 function toggleDrawer(on) { drawer.classList.toggle('on', on); scrim.classList.toggle('on', on); }
 $('menu').onclick = () => toggleDrawer(!drawer.classList.contains('on'));
 scrim.onclick = () => toggleDrawer(false);
+$('gearQuick').onclick = openSound;
 
 window.addEventListener('pagehide', () => { if (room && me) { remove(R(`presence/${me.uid}`)); remove(R(`signals/${me.uid}`)); } });
-
 window.addEventListener('error', e => {
-  if (e.message && !/ResizeObserver/.test(e.message)) toast('Error: ' + e.message);
+  if (e.message && !/ResizeObserver|Script error/i.test(e.message)) toast('Error: ' + e.message);
 });
 window.addEventListener('unhandledrejection', e => {
   const m = (e.reason && (e.reason.message || e.reason.code)) || String(e.reason);
-  toast('Error: ' + m);
+  if (!/AbortError|play\(\)|interrupted/i.test(m)) toast('Error: ' + m);
 });
 
 /* ================= start ================= */
 (function start() {
-  const hash = location.hash.match(/cfg=([^&]+)/);
-  if (hash) {
-    try { const cfg = decodeURIComponent(atob(hash[1])); store.set('ping.cfg', cfg); history.replaceState(null, '', location.pathname); } catch (e) {}
-  }
+  const hash = location.hash;
+  if (/setup/.test(hash)) store.set('ping.reconfig', '1');
   const saved = store.get('ping.cfg');
-  if (saved && store.get('ping.reconfig') !== '1') { try { boot(JSON.parse(saved)); return; } catch (e) {} }
-  if (BAKED_CFG && store.get('ping.reconfig') !== '1') { boot(BAKED_CFG); return; }
+  if (store.get('ping.reconfig') === '1') { $('gLoad').classList.add('hide'); $('gSetup').classList.remove('hide'); return; }
+  if (saved) { try { boot(JSON.parse(saved)); return; } catch (e) {} }
+  boot(BAKED_CFG);
 })();
 </script>
 </body>
