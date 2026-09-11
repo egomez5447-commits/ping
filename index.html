@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <meta name="theme-color" content="#313338">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <title>Ping</title>
 <style>
 
@@ -263,6 +265,12 @@
   .msg.flash { background:rgba(88,101,242,.18); transition:background .6s; }
   .replyline { cursor:pointer; }
   .pad.hit { background:var(--accent); color:#fff; }
+  .pad { position:relative; overflow:hidden; }
+  .pad.custom { background:#3B3F8F; color:#fff; overflow-wrap:anywhere; }
+  .pad.custom.hit { background:var(--accent); }
+  .padx { position:absolute; top:2px; right:2px; width:22px; height:22px; display:grid; place-items:center; font-size:11px; color:#C9CDFB; opacity:.75; }
+  .fx { grid-template-columns:repeat(3,1fr) !important; }
+  .fx button { font-size:13px !important; padding:10px 4px !important; }
 </style>
 </head>
 <body>
@@ -420,8 +428,10 @@
 <div class="sheet hide" id="board">
   <div class="card">
     <h2>Soundboard</h2>
-    <p class="lede">Everyone in the room hears it. Sounds are made on the spot, so nothing to download.</p>
+    <p class="lede">Everyone in the room hears it. The purple ones are sounds your crew added — tap ✕ to remove one.</p>
     <div class="pads" id="pads"></div>
+    <div class="duo"><button id="addSfxFile">＋ Upload a clip</button><button id="addSfxLink">＋ Paste a link</button></div>
+    <p class="hint">Clips up to 500 KB, and only the first 8 seconds play. For Myinstants, copy the link from a sound's download button (it ends in .mp3).</p>
     <label class="cap" style="margin-top:18px">Voice changer</label>
     <div class="fx" id="fxList"></div>
     <p class="hint" id="fxHint">Pick one, then join voice. You can switch mid-call.</p>
@@ -475,6 +485,7 @@
 <audio id="mon" class="hide"></audio>
 <input type="file" id="file" accept="image/*" class="hide">
 <input type="file" id="vfile" accept="video/*" class="hide">
+<input type="file" id="sfxFile" accept="audio/*,.mp3,.wav,.m4a,.ogg" class="hide">
 <div id="toasts"></div>
 <script type="module">
 /* ============================================================
@@ -724,7 +735,7 @@ async function exitRoom() {
   unsubs.forEach(f => { try { f(); } catch (e) {} }); unsubs = [];
   chanUnsubs.forEach(f => { try { f(); } catch (e) {} }); chanUnsubs = [];
   closeStage();
-  watch = null; watchLoaded = false;
+  watch = null; watchLoaded = false; sounds = {}; paintPads();
   if (room && me) { try { await remove(R(`presence/${me.uid}`)); } catch (e) {} }
   msgs = new Map(); reacts = {}; presence = {}; chans = {}; lastCount = 0; drewOnce = false;
 }
@@ -770,6 +781,7 @@ async function enterRoom(code) {
   unsubs.push(onValue(R(`signals/${me.uid}`), s => handleSignals(s.val() || {})));
   unsubs.push(onChildAdded(query(R('sfx'), limitToLast(3)), s => onSfx(s.key, s.val() || {})));
   unsubs.push(onValue(R('watch'), s => onWatch(s.val())));
+  unsubs.push(onValue(R('sounds'), s => { sounds = s.val() || {}; paintPads(); }));
   openChannel(store.get('ping.chan.' + room) || 'general');
 }
 
@@ -1268,9 +1280,9 @@ async function leaveVoice() {
 }
 
 function setMuteTracks() {
-  const on = !muted;
-  if (local) local.getAudioTracks().forEach(t => t.enabled = on);
-  if (fxOut) fxOut.getAudioTracks().forEach(t => t.enabled = on);
+  // Mute the mic itself; the mixed output stays on so shared-tab audio keeps playing.
+  if (local) local.getAudioTracks().forEach(t => t.enabled = !muted);
+  if (fxOut) fxOut.getAudioTracks().forEach(t => t.enabled = true);
 }
 function toggleMute() {
   if (!inVoice || !local) return;
@@ -1293,7 +1305,7 @@ async function dropPeer(uid, clear) {
 }
 
 function sendTrack() {
-  if (fxOut && fx !== 'Normal') return fxOut.getAudioTracks()[0];
+  if (fxOut) return fxOut.getAudioTracks()[0];
   return local && local.getAudioTracks()[0];
 }
 function videoSender(st) {
@@ -1446,7 +1458,7 @@ async function toggleShare() {
     return toast('Screen sharing works from a computer (Chrome, Edge, Firefox or Safari). Phones can watch, but not share.');
   }
   try {
-    screen = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 15, max: 30 } }, audio: false });
+    screen = await navigator.mediaDevices.getDisplayMedia({ video: { frameRate: { ideal: 15, max: 30 } }, audio: true });
   } catch (e) {
     if (e.name !== 'NotAllowedError' && e.name !== 'AbortError') toast("Couldn't start sharing: " + e.name);
     return;
@@ -1457,13 +1469,17 @@ async function toggleShare() {
   for (const st of peers.values()) attachScreen(st);
   update(R(`presence/${me.uid}`), { share: true }).catch(()=>{});
   openScreen(me.uid);
+  if (screen.getAudioTracks().length) { await buildFX(); toast("Sharing with sound — everyone in voice hears it."); }
+  else if (/Chrome|Edg/.test(navigator.userAgent)) toast("Sharing without sound. For sound, share a Chrome tab and turn on \"Share tab audio\".");
   draw();
 }
 function stopShare(silent) {
   if (!screen) return;
   const s = screen; screen = null;
+  const hadAudio = s.getAudioTracks().length > 0;
   s.getTracks().forEach(t => t.stop());
   for (const st of peers.values()) attachScreen(st);
+  if (hadAudio && inVoice) buildFX();
   if (stageKind === 'screen' && stageUid === me.uid) closeStage();
   if (!silent && room) update(R(`presence/${me.uid}`), { share: false }).catch(()=>{});
   draw();
@@ -1701,35 +1717,138 @@ const SFX = {
     o.connect(g); g.connect(D); penv(g,t+d,0.3,0.02,d===0.42?0.55:0.2); o.start(t+d); o.stop(t+d+0.6); }); }
 };
 const PAD_ICON = { Airhorn:'📣', Boom:'💥', Rimshot:'🥁', Trombone:'🎺', Scratch:'💿', Laser:'🔫', Pop:'🫧', Whoosh:'🌀', Fanfare:'🎉' };
-$('pads').innerHTML = Object.keys(SFX).map(n => `<button class="pad" data-sfx="${n}"><small>${PAD_ICON[n]}</small>${n}</button>`).join('');
-function playSfx(n) { try { if (SFX[n]) SFX[n](); } catch (e) {} }
+function paintPads() {
+  const synth = Object.keys(SFX).map(n => `<button class="pad" data-sfx="${n}"><small>${PAD_ICON[n]}</small>${n}</button>`);
+  const custom = Object.entries(sounds).filter(([id, v]) => v && v.name).sort((a, b) => (a[1].t || 0) - (b[1].t || 0))
+    .map(([id, v]) => `<button class="pad custom" data-cid="${esc(id)}"><small>🔊</small>${esc(String(v.name).slice(0, 16))}<span class="padx" data-cdel="${esc(id)}" aria-label="Remove">✕</span></button>`);
+  setHTML($('pads'), synth.concat(custom).join(''));
+}
+let sounds = {};
+const MAX_SFX = 500 * 1024, SFX_SECONDS = 8;
+const sfxBuf = new Map(), sfxLoading = new Map();
+function decodeAudio(ab) {
+  const c = actx();
+  return new Promise((res, rej) => { const p = c.decodeAudioData(ab, res, rej); if (p && p.then) p.then(res, rej); });
+}
+function customBuffer(id) {
+  if (sfxBuf.has(id)) return Promise.resolve(sfxBuf.get(id));
+  if (sfxLoading.has(id)) return sfxLoading.get(id);
+  const meta = sounds[id];
+  if (!meta) return Promise.resolve(null);
+  const p = (async () => {
+    let src = meta.url;
+    if (!src) {
+      const s = await get(R(`sounddata/${id}`));
+      src = s.val();
+      if (typeof src !== 'string' || !/^data:[a-z0-9.+\/-]*;base64,/i.test(src)) return null;
+    } else if (!/^https:\/\//i.test(src)) return null;
+    try {
+      const buf = await decodeAudio(await (await fetch(src)).arrayBuffer());
+      sfxBuf.set(id, buf); return buf;
+    } catch (e) {
+      if (meta.url) { const alt = { url: meta.url }; sfxBuf.set(id, alt); return alt; }  // site blocks fetching: fall back to a plain <audio>
+      return null;
+    }
+  })();
+  sfxLoading.set(id, p);
+  p.finally(() => sfxLoading.delete(id));
+  return p;
+}
+async function playCustom(id) {
+  try {
+    const b = await customBuffer(id);
+    if (!b) return;
+    if (b.url) {
+      const a = new Audio(b.url); a.volume = prefs.vol;
+      a.play().catch(()=>{}); setTimeout(() => a.pause(), SFX_SECONDS * 1000);
+      return;
+    }
+    const c = actx(), s = c.createBufferSource();
+    s.buffer = b; s.connect(sfxBus(c)); s.start(0, 0, Math.min(b.duration, SFX_SECONDS));
+  } catch (e) {}
+}
+function playSfx(n, id) { if (n === 'custom') return playCustom(id); try { if (SFX[n]) SFX[n](); } catch (e) {} }
+paintPads();
 let lastSfx = 0;
 const playedSfx = new Set();
 $('pads').onclick = e => {
-  const b = e.target.closest('[data-sfx]'); if (!b) return;
+  const x = e.target.closest('[data-cdel]');
+  if (x) {
+    e.stopPropagation();
+    const id = x.dataset.cdel, nm = (sounds[id] || {}).name || 'this sound';
+    if (confirm(`Remove "${nm}" from the board for everyone?`)) {
+      remove(R(`sounds/${id}`)).catch(()=>{}); remove(R(`sounddata/${id}`)).catch(()=>{}); sfxBuf.delete(id);
+    }
+    return;
+  }
+  const b = e.target.closest('[data-sfx], [data-cid]'); if (!b) return;
   const now = Date.now();
   if (now - lastSfx < 600) return;
   lastSfx = now;
-  const n = b.dataset.sfx;
-  playSfx(n);
+  const n = b.dataset.cid ? 'custom' : b.dataset.sfx, id = b.dataset.cid || null;
+  playSfx(n, id);
   b.classList.add('hit'); setTimeout(() => b.classList.remove('hit'), 180);
   if (!room) return;
   const r = push(R('sfx'));
   playedSfx.add(r.key);
-  set(r, { n, uid: me.uid, name: me.name, t: serverTimestamp() })
-    .then(() => setTimeout(() => remove(r).catch(()=>{}), 8000)).catch(()=>{});
+  const msg = { n, uid: me.uid, name: me.name, t: serverTimestamp() };
+  if (id) msg.id = id;
+  set(r, msg).then(() => setTimeout(() => remove(r).catch(()=>{}), 8000)).catch(()=>{});
 };
 function onSfx(key, v) {
   if (playedSfx.has(key)) return;
   playedSfx.add(key);
-  if (v.uid === me.uid || !SFX[v.n] || serverNow() - (+v.t || 0) > 6000 || myStatus === 'dnd') return;
-  playSfx(v.n);
-  sfxNote = { text: `🔊 ${v.name || 'Someone'} played ${v.n}`, until: Date.now() + 2500 };
+  const custom = v.n === 'custom' && v.id && sounds[v.id];
+  if (v.uid === me.uid || !(SFX[v.n] || custom) || serverNow() - (+v.t || 0) > 6000 || myStatus === 'dnd') return;
+  playSfx(v.n, v.id);
+  sfxNote = { text: `🔊 ${v.name || 'Someone'} played ${custom ? sounds[v.id].name : v.n}`, until: Date.now() + 2500 };
   renderTyping();
 }
+const soundName = s => String(s || '').replace(/\.[a-z0-9]{2,4}$/i, '').replace(/[_+%-]+|%20/g, ' ').replace(/\s+/g, ' ').trim().slice(0, 16) || 'clip';
+function canAddSound() {
+  if (!room) { toast('Join a room first.'); return false; }
+  if (Object.keys(sounds).length >= 30) { toast('The board is full (30 sounds). Remove one first.'); return false; }
+  return true;
+}
+$('addSfxFile').onclick = () => { if (canAddSound()) $('sfxFile').click(); };
+$('sfxFile').onchange = async e => {
+  const f = e.target.files[0]; e.target.value = '';
+  if (!f) return;
+  if (f.size > MAX_SFX) return toast(`That clip is ${Math.round(f.size / 1024)} KB. Keep it under 500 KB — a few seconds of MP3.`);
+  try {
+    const data = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result); r.onerror = rej; r.readAsDataURL(f); });
+    let buf;
+    try { buf = await decodeAudio(await f.arrayBuffer()); } catch (err) { return toast("That file isn't audio this browser can play. Try an MP3."); }
+    const name = soundName(prompt('Name this sound', soundName(f.name)) || f.name);
+    const r = push(R('sounds'));
+    sfxBuf.set(r.key, buf);
+    await set(R(`sounddata/${r.key}`), data);
+    await set(r, { name, by: me.uid, byName: me.name, t: Date.now() });
+    toast(`Added "${name}" to the board for everyone.`);
+  } catch (err) { toast("Couldn't upload that clip: " + (err.message || err)); }
+};
+$('addSfxLink').onclick = async () => {
+  if (!canAddSound()) return;
+  const raw = (prompt('Paste a link to an audio file (https://…mp3)') || '').trim();
+  if (!raw) return;
+  let u;
+  try { u = new URL(raw); } catch (e) { return toast("That isn't a link."); }
+  if (u.protocol !== 'https:') return toast('The link has to start with https://');
+  if (/myinstants\.com$/i.test(u.hostname) && !/\.(mp3|wav|ogg|m4a)$/i.test(u.pathname)) {
+    return toast("That's the Myinstants page, not the sound. Use the link from its download button — it ends in .mp3.");
+  }
+  const guess = soundName(decodeURIComponent(u.pathname.split('/').pop() || ''));
+  const name = soundName(prompt('Name this sound', guess) || guess);
+  try {
+    const r = push(R('sounds'));
+    await set(r, { name, url: u.href, by: me.uid, byName: me.name, t: Date.now() });
+    playCustom(r.key);
+    toast(`Added "${name}" to the board for everyone.`);
+  } catch (err) { toast("Couldn't add that sound: " + (err.message || err)); }
+};
 
 /* ================= voice changer ================= */
-const FX = ['Normal','Deep','Chipmunk','Robot','Telephone','Megaphone','Cave'];
+const FX = ['Normal','Feminine','Masculine','Baby','Grandpa','Nerd','Deep','Chipmunk','Robot','Demon','Helium','Alien','Underwater','Ghost','Wobbly','Radio','Stadium','Telephone','Megaphone','Cave'];
 let fx = FX.includes(store.get('ping.fx')) ? store.get('ping.fx') : 'Normal';
 let fxGraph = null, fxOut = null;
 
@@ -1764,33 +1883,64 @@ function makeGraph(c, kind) {
   const made = [], srcs = [];
   const node = x => (made.push(x), x);
   const input = node(c.createGain()), output = node(c.createGain());
+  let head = input;
+  const to = n => { head.connect(n); head = n; return n; };
   const filt = (type, f, q, g) => { const b = node(c.createBiquadFilter()); b.type = type; b.frequency.value = f; if (q != null) b.Q.value = q; if (g != null) b.gain.value = g; return b; };
-  const shaper = k => { const s = node(c.createWaveShaper()), N = 2048, cv = new Float32Array(N); for (let i = 0; i < N; i++) { const x = i * 2 / N - 1; cv[i] = (1 + k) * x / (1 + k * Math.abs(x)); } s.curve = cv; return s; };
-  const chain = (...n) => { for (let i = 0; i < n.length - 1; i++) n[i].connect(n[i + 1]); };
+  const shaper = k => { const s = node(c.createWaveShaper()), N = 1024, cv = new Float32Array(N); for (let i = 0; i < N; i++) cv[i] = Math.tanh((i * 2 / N - 1) * k); s.curve = cv; return s; };
+  const pitch = r => { const j = jungle(c, made, srcs, r >= 1 ? 2 * (r - 1) : -2 * (1 - r)); head.connect(j.input); head = j.output; };
+  const lfo = (param, hz, depth, base) => {
+    if (base != null) param.value = base;
+    const o = c.createOscillator(), g = node(c.createGain());
+    o.frequency.value = hz; g.gain.value = depth; o.connect(g); g.connect(param); o.start(); srcs.push(o);
+  };
+  const gain = v => { const g = node(c.createGain()); g.gain.value = v; return g; };
+  const tremolo = (hz, depth, base) => { const g = to(gain(base)); lfo(g.gain, hz, depth, base); };
+  const vibrato = (hz, depth, base) => { const d = to(node(c.createDelay(0.2))); lfo(d.delayTime, hz, depth, base); };
+  const ring = (hz, base) => { const g = gain(base || 0); lfo(g.gain, hz, 1, base || 0); return g; };
+  const echo = (time, fb, wet) => {
+    const d = node(c.createDelay(2)), f = gain(fb), w = gain(wet);
+    d.delayTime.value = time; head.connect(d); d.connect(f); f.connect(d); d.connect(w); w.connect(output);
+  };
   switch (kind) {
-    case 'Deep': { const j = jungle(c, made, srcs, -0.65); chain(input, j.input); chain(j.output, filt('lowshelf', 200, null, 6), output); output.gain.value = 1.4; break; }
-    case 'Chipmunk': { const j = jungle(c, made, srcs, 1.4); chain(input, j.input); chain(j.output, filt('highpass', 180, 0.7), output); output.gain.value = 1.1; break; }
+    case 'Feminine': pitch(1.28); to(filt('highpass', 170)); to(filt('peaking', 3200, 1.2, 5)); to(filt('lowshelf', 300, null, -3)); echo(0.07, 0.22, 0.3); break;
+    case 'Masculine': pitch(0.8); to(filt('lowshelf', 180, null, 5)); to(filt('peaking', 700, 1, 2)); to(filt('highshelf', 5000, null, -3)); output.gain.value = 1.2; break;
+    case 'Baby': pitch(1.7); to(filt('lowpass', 3800, 0.8)); to(filt('peaking', 1300, 2.5, 6)); tremolo(5.2, 0.12, 0.9); break;
+    case 'Grandpa': vibrato(4.6, 0.0035, 0.01); pitch(0.9); to(filt('lowpass', 2900, 0.7)); to(filt('highshelf', 2000, null, -6)); tremolo(4.6, 0.18, 0.82); break;
+    case 'Nerd': pitch(1.08); to(filt('highpass', 380)); to(filt('peaking', 2500, 3, 13)); to(filt('peaking', 1100, 2, -6)); to(shaper(1.6)); output.gain.value = 0.8; break;
+    case 'Deep': pitch(0.68); to(filt('lowshelf', 200, null, 6)); output.gain.value = 1.4; break;
+    case 'Chipmunk': pitch(1.7); to(filt('highpass', 180, 0.7)); output.gain.value = 1.1; break;
     case 'Robot': {
-      const rm = node(c.createGain()); rm.gain.value = 0.2;
-      const o = c.createOscillator(); o.type = 'sine'; o.frequency.value = 55; o.connect(rm.gain); srcs.push(o); o.start();
-      const d = node(c.createDelay(0.1)); d.delayTime.value = 0.009;
-      const fb = node(c.createGain()); fb.gain.value = 0.5;
-      chain(input, rm); rm.connect(d); d.connect(fb); fb.connect(d); rm.connect(output); d.connect(output);
+      const rm = to(ring(55, 0.2));
+      const d = node(c.createDelay(0.1)), fb = gain(0.5);
+      d.delayTime.value = 0.009; rm.connect(d); d.connect(fb); fb.connect(d); d.connect(output);
       output.gain.value = 1.5; break;
     }
-    case 'Telephone': chain(input, filt('highpass', 450, 0.9), filt('lowpass', 2900, 0.9), shaper(4), output); output.gain.value = 1.3; break;
-    case 'Megaphone': chain(input, filt('highpass', 700, 0.8), filt('peaking', 1800, 1, 9), shaper(14), filt('lowpass', 4200, 0.8), output); output.gain.value = 0.8; break;
+    case 'Demon': {
+      pitch(0.55);
+      const dry = gain(0.7), rm = ring(28), wet = gain(0.5), sum = gain(1);
+      head.connect(dry); head.connect(rm); rm.connect(wet); dry.connect(sum); wet.connect(sum); head = sum;
+      echo(0.09, 0.35, 0.6); output.gain.value = 1.3; break;
+    }
+    case 'Helium': pitch(1.9); to(filt('highpass', 260)); break;
+    case 'Alien': pitch(1.25); to(ring(95)); to(filt('bandpass', 1600, 0.7)); echo(0.16, 0.3, 0.5); output.gain.value = 1.6; break;
+    case 'Underwater': { const lp = to(filt('lowpass', 520, 3)); lfo(lp.frequency, 0.6, 240, 520); echo(0.12, 0.45, 0.5); output.gain.value = 1.3; break; }
+    case 'Ghost': pitch(1.15); to(filt('highpass', 1200)); tremolo(6.5, 0.45, 0.55); echo(0.32, 0.55, 0.6); output.gain.value = 1.4; break;
+    case 'Wobbly': vibrato(5.5, 0.006, 0.012); pitch(0.92); break;
+    case 'Radio': to(filt('bandpass', 1700, 1.3)); to(shaper(5)); output.gain.value = 0.8; break;
+    case 'Stadium': to(filt('highpass', 200)); echo(0.27, 0.5, 0.45); echo(0.41, 0.35, 0.35); to(gain(0.85)); break;
+    case 'Telephone': to(filt('highpass', 450, 0.9)); to(filt('lowpass', 2900, 0.9)); to(shaper(3)); output.gain.value = 1.2; break;
+    case 'Megaphone': to(filt('highpass', 700, 0.8)); to(filt('peaking', 1800, 1, 9)); to(shaper(9)); to(filt('lowpass', 4200, 0.8)); output.gain.value = 0.7; break;
     case 'Cave': {
       const len = Math.floor(c.sampleRate * 2.6), ir = c.createBuffer(2, len, c.sampleRate);
       for (let ch = 0; ch < 2; ch++) { const d = ir.getChannelData(ch); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 3); }
       const conv = node(c.createConvolver()); conv.buffer = ir;
       const pre = node(c.createDelay(0.2)); pre.delayTime.value = 0.03;
-      const wet = node(c.createGain()); wet.gain.value = 0.7;
-      const dry = node(c.createGain()); dry.gain.value = 0.8;
-      chain(input, dry, output); chain(input, pre, conv, wet, output); break;
+      const wet = gain(0.7), dry = gain(0.8);
+      head.connect(dry); dry.connect(output); head.connect(pre); pre.connect(conv); conv.connect(wet); wet.connect(output);
+      head = null; break;
     }
-    default: chain(input, output);
   }
+  if (head) head.connect(output);
   return { input, output, stop() { srcs.forEach(s => { try { s.stop(); } catch (e) {} }); made.forEach(x => { try { x.disconnect(); } catch (e) {} }); } };
 }
 
@@ -1800,17 +1950,29 @@ async function applySendTrack() {
     if (st.audioSender) { try { await st.audioSender.replaceTrack(t); } catch (e) {} }
   }
 }
+// Outgoing voice = mic → effect → (plus shared-tab audio, when sharing with sound).
 async function buildFX() {
   const old = fxGraph;
   fxGraph = null; fxOut = null;
-  if (local && fx !== 'Normal') {
+  const shareAudio = screen && screen.getAudioTracks()[0];
+  if (local && (fx !== 'Normal' || shareAudio)) {
     try {
       const c = actx();
       const src = c.createMediaStreamSource(local), dest = c.createMediaStreamDestination();
       const g = makeGraph(c, fx);
       src.connect(g.input); g.output.connect(dest);
+      let sSrc = null, sGain = null;
+      if (shareAudio) {
+        sSrc = c.createMediaStreamSource(new MediaStream([shareAudio]));
+        sGain = c.createGain(); sGain.gain.value = 0.9;
+        sSrc.connect(sGain); sGain.connect(dest);
+      }
       fxOut = dest.stream;
-      fxGraph = { stop() { try { src.disconnect(); } catch (e) {} g.stop(); dest.stream.getTracks().forEach(t => t.stop()); } };
+      fxGraph = { stop() {
+        try { src.disconnect(); } catch (e) {}
+        if (sSrc) { try { sSrc.disconnect(); sGain.disconnect(); } catch (e) {} }
+        g.stop(); dest.stream.getTracks().forEach(t => t.stop());
+      } };
     } catch (e) { toast('Voice changer failed on this browser: ' + e.message); }
   }
   setMuteTracks();
