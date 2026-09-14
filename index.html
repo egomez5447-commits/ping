@@ -591,6 +591,36 @@
   .person.bot .av::after { background:#4FC3F7; }
   .mention.bot { background:rgba(79,195,247,.25); color:#4FC3F7; }
 
+  /* ---- UNO & Candy Land ---- */
+  .lobby { width:100%; max-width:340px; }
+  .lrow { display:flex; align-items:center; gap:10px; padding:8px 10px; border-radius:8px; background:var(--surf3); margin-bottom:6px; }
+  .lrow b { color:var(--ink); flex:1; } .lrow .tag { font-size:11px; color:var(--mute); }
+  .lobby .btn-main { margin-top:8px; }
+  .uopps { display:flex; gap:6px; flex-wrap:wrap; justify-content:center; width:100%; margin-bottom:10px; }
+  .uopp { background:var(--surf3); border-radius:8px; padding:6px 10px; text-align:center; font-size:12px; color:var(--mute); min-width:70px; position:relative; }
+  .uopp b { display:block; color:var(--ink); font-size:13px; } .uopp.cur { outline:2px solid var(--live); } .uopp.uno b::after { content:' ①'; color:#fdd835; }
+  .ucatch { display:block; margin:4px auto 0; border:0; border-radius:6px; background:var(--warn); color:#fff; font-weight:700; font-size:11px; padding:4px 8px; animation:blink 1s infinite; }
+  .utable { display:flex; align-items:center; justify-content:center; gap:14px; margin:6px 0 10px; }
+  .ucard { width:46px; height:66px; border-radius:8px; border:3px solid #fff; color:#fff; font-weight:800; font-size:20px; display:grid; place-items:center; box-shadow:0 2px 6px rgba(0,0,0,.4); padding:0; flex:0 0 auto; transition:transform .12s; text-shadow:0 1px 2px rgba(0,0,0,.6); }
+  .ucard.big { width:64px; height:92px; font-size:28px; }
+  .ucard.cR { background:#e53935 } .ucard.cG { background:#43a047 } .ucard.cB { background:#1e88e5 } .ucard.cY { background:#fdd835; color:#222; text-shadow:none } .ucard.cW { background:linear-gradient(135deg,#e53935 25%,#fdd835 25% 50%,#43a047 50% 75%,#1e88e5 75%); }
+  .ucard:disabled { opacity:.45; filter:grayscale(.3); }
+  .ucard.can { cursor:pointer; } .ucard.can:hover { transform:translateY(-8px); }
+  .ucolor { padding:8px 12px; border-radius:20px; color:#fff; font-weight:700; font-size:13px; text-shadow:0 1px 2px rgba(0,0,0,.5); }
+  .udraw { width:56px; height:80px; border-radius:8px; border:3px dashed var(--mute); background:var(--surf3); color:var(--ink); font-weight:700; font-size:13px; } .udraw small { display:block; color:var(--mute); font-weight:400; } .udraw:disabled { opacity:.4; }
+  .uhand { display:flex; gap:6px; overflow-x:auto; padding:10px 4px 6px; width:100%; max-width:360px; scrollbar-width:thin; }
+  .upick { display:flex; gap:10px; align-items:center; margin:6px 0; } .upick b { color:var(--ink); font-size:13px; } .upick button { width:40px; height:40px; border-radius:50%; border:3px solid #fff; }
+  .cllegend { display:flex; gap:8px; flex-wrap:wrap; justify-content:center; margin-bottom:8px; font-size:12px; color:var(--dim); } .cll { padding:3px 8px; border-radius:12px; background:var(--surf3); } .cll.cur { outline:2px solid var(--live); }
+  .clboard { display:grid; grid-template-columns:repeat(12, 1fr); gap:2px; width:100%; max-width:360px; background:#5d4037; padding:4px; border-radius:8px; }
+  .clc { aspect-ratio:1; border-radius:3px; display:grid; place-items:center; font-size:11px; position:relative; line-height:1; }
+  .clc i { font-style:normal; font-size:14px; position:absolute; inset:0; display:grid; place-items:center; animation:popin .3s ease; }
+  .clc.castle { font-size:16px; } .clc.lic { box-shadow:inset 0 0 0 2px #000; }
+  .clstart { font-size:12px; color:var(--mute); margin:6px 0; }
+  .cltable { display:flex; align-items:center; gap:14px; justify-content:center; }
+  .clcard { width:58px; height:80px; border-radius:8px; border:3px solid #fff; display:grid; place-items:center; color:#fff; text-align:center; box-shadow:0 2px 6px rgba(0,0,0,.4); text-shadow:0 1px 2px rgba(0,0,0,.5); animation:popin .25s ease; }
+  .clcard span { font-size:20px; font-weight:800; } .clcard small { font-size:9px; display:block; }
+  .cldraw { padding:12px 18px; border-radius:10px; border:0; background:var(--accent); color:#fff; font-weight:700; } .cldraw small { display:block; font-weight:400; font-size:11px; opacity:.85; } .cldraw:disabled { background:var(--raise); color:var(--mute); }
+
   /* ---- light theme ---- */
   body.light { --rail:#E3E5E8; --side:#F2F3F5; --main:#FFFFFF; --input:#EBEDEF; --raise:#DDE0E4; --line:#D9DBDE; --ink:#060607; --dim:#2E3338; --mute:#5C5E66; --chan:#6D6F78; --hover:#F0F1F3; --namel:38%; --surf2:#EBEDEF; --surf3:#E8EAED; --edge:#D9DBDE; --rule:#D9DBDE; }
   body.light .gate { background:radial-gradient(120% 80% at 50% 0%, #DDE0FF 0%, #fff 55%); }
@@ -3302,10 +3332,18 @@ const GAMES = {
 };
 let gameSel = -1, seaDraft = null, openGame = null, gameCleanup = null, lastGameSig = '';
 
-function gameRole(g) { return g.x === me.uid ? 'X' : g.o === me.uid ? 'O' : null; }
+function gameRole(g) { if (g.pl) { return g.pl.some(p => p.uid === me.uid) ? 'P' : null; } return g.x === me.uid ? 'X' : g.o === me.uid ? 'O' : null; }
+const isMulti = g => !!g.pl;
+function turnUid(g) { return isMulti(g) ? (g.pl[g.ti] || {}).uid : g.turn === 'X' ? g.x : g.o; }
+function myTurnOf(g) { return !g.over && (isMulti(g) ? g.started && turnUid(g) === me.uid : gameRole(g) === g.turn && !!g.o); }
+function winnerName(g) { if (!g.over) return ''; if (isMulti(g)) return g.over.name || ((g.pl.find(p => p.uid === g.over.winner) || {}).name) || 'Someone'; return gname(g, g.over.winner); }
 function gameStatus(g) {
   const G = GAMES[g.type]; if (!G) return 'Unknown game';
-  if (g.over) return g.over.winner === 'draw' ? "It's a draw!" : `${gname(g, g.over.winner)} wins${g.over.forfeit ? ' (forfeit)' : ''}! 🏆`;
+  if (g.over) return g.over.winner === 'draw' ? "It's a draw!" : `${winnerName(g)} wins${g.over.forfeit ? ' (forfeit)' : ''}! 🏆`;
+  if (isMulti(g)) {
+    if (!g.started) return `Lobby · ${g.pl.length}/${G.multi.max} players${g.pl.length >= G.multi.min ? (g.x === me.uid ? ' · tap Play to start' : ' · waiting for ' + (g.xn || 'host') + ' to start') : ' · need ' + G.multi.min}`;
+    return turnUid(g) === me.uid ? 'Your turn!' : `${(g.pl[g.ti] || {}).name}'s turn`;
+  }
   if (!g.o) return g.x === me.uid ? 'Waiting for someone to join…' : 'Tap Play to join';
   const role = gameRole(g);
   if (G.free && G.canAct(g, role)) return 'Placing ships…';
@@ -3313,9 +3351,11 @@ function gameStatus(g) {
 }
 function gameCardHTML(m) {
   const g = m.game, G = GAMES[g.type]; if (!G) return '';
-  const role = gameRole(g), myTurn = !g.over && role === g.turn && !!g.o;
+  const role = gameRole(g), myTurn = myTurnOf(g);
   let pv = ''; try { pv = G.preview ? G.preview(g) : ''; } catch (e) {}
-  return `<div class="gmcard${myTurn ? ' myturn' : ''}${g.over ? ' over' : ''}"><div class="gico">${G.icon}</div><div class="ginfo"><b>${esc(G.name)}</b><span>${esc(gname(g,'X'))} vs ${esc(gname(g,'O'))}</span><em>${esc(gameStatus(g))}</em></div>${pv}<button data-play="${esc(m.id)}">${g.over ? 'View' : myTurn ? 'Play' : role ? 'Open' : g.o ? 'Watch' : 'Join'}</button></div>`;
+  const who = isMulti(g) ? g.pl.map(p => p.name).join(', ') : `${gname(g,'X')} vs ${gname(g,'O')}`;
+  const btn = g.over ? 'View' : isMulti(g) ? (!g.started ? (role ? (g.x === me.uid && g.pl.length >= G.multi.min ? 'Start' : 'Lobby') : g.pl.length < G.multi.max ? 'Join' : 'Watch') : myTurn ? 'Play' : role ? 'Open' : 'Watch') : myTurn ? 'Play' : role ? 'Open' : g.o ? 'Watch' : 'Join';
+  return `<div class="gmcard${myTurn ? ' myturn' : ''}${g.over ? ' over' : ''}"><div class="gico">${G.icon}</div><div class="ginfo"><b>${esc(G.name)}</b><span>${esc(who)}</span><em>${esc(gameStatus(g))}</em></div>${pv}<button data-play="${esc(m.id)}">${btn}</button></div>`;
 }
 function openGamePicker() {
   $('gpBody').innerHTML = Object.entries(GAMES).map(([k, G]) => `<button class="gp" data-game="${k}"><span>${G.icon}</span>${esc(G.name)}</button>`).join('');
@@ -3325,7 +3365,9 @@ $('gpBody').onclick = async e => {
   const b = e.target.closest('[data-game]'); if (!b) return;
   $('gpick').classList.add('hide');
   const G = GAMES[b.dataset.game];
-  try { await post({ game: { type: b.dataset.game, x: me.uid, xn: me.name, o: null, on: null, turn: 'X', s: G.init(), over: null, t: Date.now() }, text: '' }); toast(`${G.icon} ${G.name} sent — first to tap Play is your opponent.`); }
+  const base = { type: b.dataset.game, x: me.uid, xn: me.name, o: null, on: null, turn: 'X', s: G.init(), over: null, t: Date.now() };
+  if (G.multi) { base.pl = [{ uid: me.uid, name: me.name, hue: me.hue }]; base.ti = 0; base.started = false; }
+  try { await post({ game: base, text: '' }); toast(G.multi ? `${G.icon} ${G.name} lobby is open — up to ${G.multi.max} players. Tap Start when everyone's in.` : `${G.icon} ${G.name} sent — first to tap Play is your opponent.`); }
   catch (err) { toast("Couldn't start the game."); }
 };
 $('gpDone').onclick = () => $('gpick').classList.add('hide');
@@ -3333,8 +3375,15 @@ $('gpick').onclick = e => { if (e.target === $('gpick')) $('gpick').classList.ad
 
 async function showGame(id) {
   const m = msgs.get(id); if (!m || !m.game) return;
-  const g = m.game;
-  if (!gameRole(g) && !g.o && !g.over) {
+  const g = m.game, G = GAMES[g.type] || {};
+  if (isMulti(g)) {
+    if (!g.started && !g.over) {
+      if (!gameRole(g) && g.pl.length < G.multi.max) { try { await update(ref(db, `rooms/${room}/${msgPath(chan)}/${id}/game`), { pl: [...g.pl, { uid: me.uid, name: me.name, hue: me.hue }], t: Date.now() }); toast(`You're in! ${g.pl.length + 1}/${G.multi.max} players.`); } catch (e) {} }
+      else if (g.x === me.uid && g.pl.length >= G.multi.min) {
+        try { await update(ref(db, `rooms/${room}/${msgPath(chan)}/${id}/game`), { started: true, ti: 0, s: G.start(g), last: me.uid, t: Date.now() }); toast('Game started!'); } catch (e) {}
+      } else if (g.x === me.uid) toast(`Need at least ${G.multi.min} players.`);
+    }
+  } else if (!gameRole(g) && !g.o && !g.over) {
     try { await update(ref(db, `rooms/${room}/${msgPath(chan)}/${id}/game`), { o: me.uid, on: me.name, t: Date.now() }); toast(`You're in as O vs ${gname(g,'X')}.`); } catch (e) {}
   }
   openGame = id; gameSel = -1; seaDraft = null; lastGameSig = '';
@@ -3346,17 +3395,23 @@ function renderGame() {
   const m = msgs.get(openGame); if (!m || !m.game) { closeGame(); return; }
   const g = m.game, G = GAMES[g.type]; if (!G) return closeGame();
   const role = gameRole(g);
-  const sig = JSON.stringify([g.s, g.turn, g.over, g.o, gameSel, seaDraft, role]);
+  const sig = JSON.stringify([g.s, g.turn, g.ti, g.pl, g.started, g.over, g.o, gameSel, seaDraft, role]);
   if (sig === lastGameSig) return; lastGameSig = sig;
   if (gameCleanup) { gameCleanup(); gameCleanup = null; }
   $('gTitle').textContent = `${G.icon} ${G.name}`;
-  const myTurn = role === g.turn && !g.over && !!g.o, free = G.free && G.canAct(g, role);
-  const turnU = presence[g.turn === 'X' ? g.x : g.o] || { name: gname(g, g.turn), hue: 220 };
-  const series = seriesFor(m);
-  $('gSub').innerHTML = `<div class="gturn">${avHTML(turnU)}<span>${g.over ? esc(gameStatus(g)) : !g.o ? 'Waiting for an opponent…' : free ? 'Setting up' : `<b>${esc(gname(g, g.turn))}</b>'s turn`}</span><span class="badge${myTurn || (free && role) ? '' : ' wait'}">${g.over ? 'Game over' : myTurn ? 'YOUR TURN' : free && role ? 'YOUR SETUP' : role ? 'Waiting' : 'Watching'}</span></div>${series ? `<div class="gseries">${esc(series)}</div>` : ''}`;
+  const myTurn = myTurnOf(g), free = !isMulti(g) && G.free && G.canAct(g, role);
+  const tu = turnUid(g), turnU = presence[tu] || (isMulti(g) ? (g.pl[g.ti] || { name: '?', hue: 220 }) : { name: gname(g, g.turn), hue: 220 });
+  const series = isMulti(g) ? '' : seriesFor(m);
+  const turnName = isMulti(g) ? (g.pl[g.ti] || {}).name : gname(g, g.turn);
+  const waiting = isMulti(g) ? !g.started : !g.o;
+  $('gSub').innerHTML = `<div class="gturn">${avHTML(turnU)}<span>${g.over ? esc(gameStatus(g)) : waiting ? (isMulti(g) ? `Lobby · ${g.pl.length}/${G.multi.max}` : 'Waiting for an opponent…') : free ? 'Setting up' : `<b>${esc(turnName)}</b>'s turn`}</span><span class="badge${myTurn || (free && role) ? '' : ' wait'}">${g.over ? 'Game over' : myTurn ? 'YOUR TURN' : free && role ? 'YOUR SETUP' : role ? 'Waiting' : 'Watching'}</span></div>${series ? `<div class="gseries">${esc(series)}</div>` : ''}`;
   const prev = gamePrev.get(openGame);
-  $('gBody').innerHTML = G.render(g, role) + (role && !g.over && g.o ? '<button class="gforfeit" data-forfeit="1">Give up this game</button>' : '');
-  $('gBody').className = 'gbody' + (myTurn ? ' myturn' : '') + (!myTurn && !free ? ' locked' : '');
+  let body;
+  if (isMulti(g) && !g.started && !g.over) {
+    body = `<div class="lobby"><p class="ghint">${esc(G.name)} · ${G.multi.min}–${G.multi.max} players</p>${g.pl.map((p, i) => `<div class="lrow">${avHTML(presence[p.uid] || p)}<b>${esc(p.name)}</b>${i === 0 ? '<span class="tag">host</span>' : ''}</div>`).join('')}${role ? '' : g.pl.length < G.multi.max ? `<button class="btn-main" data-lobby="join">Join game</button>` : '<p class="ghint">Full.</p>'}${g.x === me.uid ? `<button class="btn-main" data-lobby="start" ${g.pl.length < G.multi.min ? 'disabled' : ''}>Start with ${g.pl.length} player${g.pl.length === 1 ? '' : 's'}</button>` : role ? '<p class="ghint">Waiting for the host to start…</p>' : ''}</div>`;
+  } else body = G.render(g, isMulti(g) ? me.uid : role);
+  $('gBody').innerHTML = body + (role && !g.over && (isMulti(g) ? g.started : g.o) ? '<button class="gforfeit" data-forfeit="1">Give up this game</button>' : '');
+  $('gBody').className = 'gbody' + (myTurn ? ' myturn' : '') + (!myTurn && !free && !(isMulti(g) && !g.started) ? ' locked' : '');
   // animate what changed since the last render
   try {
     if (prev && prev.id === openGame) {
@@ -3368,11 +3423,11 @@ function renderGame() {
       if (G.pitsKey) { const a = Object.values(prev.s.p || {}), b = Object.values(g.s.p || {}); b.forEach((v, i) => { if (+v !== +a[i]) { const el = $('gBody').querySelector(`[data-pit="${i}"]`); if (el) el.classList.add('new'); } }); }
       if (g.type === 'sea') { for (const k of ['sx', 'so']) { const a = prev.s[k] || '', b = g.s[k] || ''; for (let i = 0; i < b.length; i++) if (a[i] !== b[i] && b[i] === 'h') $('gBody').querySelectorAll(`.sea [data-cell="${i}"].hit`).forEach(el => el.classList.add('new')); } }
       if (!prev.over && g.over) endEffects(g, role);
-      else if (prev.turn !== g.turn && myTurn && g.last !== me.uid) gsnd('turn');
+      else if ((prev.turn !== g.turn || prev.ti !== g.ti) && myTurn && g.last !== me.uid) gsnd('turn');
       else if (g.last && g.last !== me.uid && prev.t !== g.t && !g.over) gsnd('place');
     }
   } catch (e) {}
-  gamePrev.set(openGame, { id: openGame, s: JSON.parse(JSON.stringify(g.s)), over: g.over, turn: g.turn, t: g.t });
+  gamePrev.set(openGame, { id: openGame, s: JSON.parse(JSON.stringify(g.s)), over: g.over, turn: g.turn, ti: g.ti, t: g.t });
   if (G.mini && myTurn && $('gcv')) gameCleanup = G.mini(g, role, $('gcv'), act => gameAct(openGame, act));
   $('gRematch').classList.toggle('hide', !g.over || !role);
 }
@@ -3386,9 +3441,10 @@ function seriesFor(m) {
 }
 function endEffects(g, role) {
   if (!role) return;
+  const iWon = isMulti(g) ? g.over.winner === me.uid : g.over.winner === role;
   if (g.over.winner === 'draw') { gsnd('draw'); toast("It's a draw!"); }
-  else if (g.over.winner === role) { gsnd('win'); showBurst('🏆'); toast(`You won ${GAMES[g.type].name}! 🏆`); }
-  else { gsnd('lose'); toast(`${gname(g, g.over.winner)} won ${GAMES[g.type].name}. Rematch?`); }
+  else if (iWon) { gsnd('win'); showBurst('🏆'); toast(`You won ${GAMES[g.type].name}! 🏆`); }
+  else { gsnd('lose'); toast(`${winnerName(g)} won ${GAMES[g.type].name}. Rematch?`); }
 }
 $('gBody').addEventListener('mouseover', e => {
   const b = e.target.closest('[data-col]'); if (!b || !openGame) return;
@@ -3409,15 +3465,28 @@ $('game').onclick = e => { if (e.target === $('game')) closeGame(); };
 $('gRematch').onclick = async () => {
   const m = msgs.get(openGame); if (!m || !m.game) return;
   const g = m.game, G = GAMES[g.type]; closeGame();
-  try { await post({ game: { type: g.type, x: me.uid, xn: me.name, o: g.x === me.uid ? g.o : g.x, on: g.x === me.uid ? g.on : g.xn, turn: 'X', s: G.init(), over: null, t: Date.now() }, text: '' }); toast('Rematch sent!'); } catch (e) {}
+  const base = isMulti(g) ? { type: g.type, x: me.uid, xn: me.name, o: null, on: null, turn: 'X', pl: [{ uid: me.uid, name: me.name, hue: me.hue }, ...g.pl.filter(p => p.uid !== me.uid)], ti: 0, started: false, s: G.init(), over: null, t: Date.now() }
+    : { type: g.type, x: me.uid, xn: me.name, o: g.x === me.uid ? g.o : g.x, on: g.x === me.uid ? g.on : g.xn, turn: 'X', s: G.init(), over: null, t: Date.now() };
+  try { await post({ game: base, text: '' }); toast('Rematch sent!'); } catch (e) {}
 };
 $('gBody').onclick = async e => {
   if (e.target.closest('[data-forfeit]')) {
     const m = msgs.get(openGame); if (!m || !m.game) return;
+    if (isMulti(m.game)) {
+      const g = m.game, rest = g.pl.filter(p => p.uid !== me.uid);
+      if (!await confirmBox('Leave this game?', rest.length === 1 ? `${rest[0].name} gets the win.` : 'The others keep playing without you.', 'Leave')) return;
+      const patch = { pl: rest, last: me.uid, t: Date.now() };
+      if (rest.length <= 1) patch.over = { winner: rest[0] ? rest[0].uid : 'draw', name: rest[0] ? rest[0].name : '', forfeit: true };
+      else { patch.ti = g.ti % rest.length; }
+      try { await update(ref(db, `rooms/${room}/${msgPath(chan)}/${openGame}/game`), patch); } catch (err) {}
+      closeGame(); return;
+    }
     if (!await confirmBox('Give up this game?', `${gname(m.game, other(gameRole(m.game)))} gets the win.`, 'Give up')) return;
     try { await update(ref(db, `rooms/${room}/${msgPath(chan)}/${openGame}/game`), { over: { winner: other(gameRole(m.game)), forfeit: true }, last: me.uid, t: Date.now() }); } catch (err) {}
     return;
   }
+  const lb = e.target.closest('[data-lobby]');
+  if (lb) { const m = msgs.get(openGame); if (!m) return; if (lb.dataset.lobby === 'join' || lb.dataset.lobby === 'start') { lastGameSig = ''; showGame(openGame); } return; }
   const b = e.target.closest('[data-act]'); if (!b || !openGame) return;
   let act; try { act = JSON.parse(b.dataset.act); } catch (err) { return; }
   gameAct(openGame, act);
@@ -3427,6 +3496,23 @@ async function gameAct(id, act) {
   const m = msgs.get(id); if (!m || !m.game) return;
   const g = m.game, G = GAMES[g.type]; if (!G) return;
   if (g.over) return toast('This game is over. Tap Rematch to play again.');
+  if (isMulti(g)) {
+    if (!gameRole(g)) return toast("You're watching this one.");
+    if (!g.started) return toast('Waiting for the host to start.');
+    if (acting) return;
+    if (!(G.anytime && G.anytime(act)) && turnUid(g) !== me.uid) return toast(`Not your turn — waiting for ${(g.pl[g.ti] || {}).name}.`);
+    const res = G.act(g, act, me.uid);
+    if (!res) return; if (res.error) return toast(res.error);
+    buzz(); gsnd(res.snd || 'place');
+    const patch = { s: res.s, ti: res.ti != null ? res.ti : g.ti, over: res.over || null, last: me.uid, t: Date.now() };
+    const before = JSON.parse(JSON.stringify(m.game));
+    m.game = { ...m.game, ...patch }; lastGameSig = ''; renderGame();
+    acting = true;
+    try { await update(ref(db, `rooms/${room}/${msgPath(chan)}/${id}/game`), patch); if (res.note) toast(res.note); }
+    catch (e) { m.game = before; lastGameSig = ''; renderGame(); toast("Couldn't send that move."); }
+    acting = false;
+    return;
+  }
   let role = gameRole(g), o = g.o, on = g.on;
   if (!role) {
     if (o) return toast(`This one is between ${gname(g,'X')} and ${gname(g,'O')}. Send your own from the + button.`);
@@ -3459,8 +3545,10 @@ async function gameAct(id, act) {
 const gameTurnSeen = new Map();
 function gameNudges() {
   for (const m of msgs.values()) {
-    if (!m.game || !m.game.o || m.game.over) continue;
-    const g = m.game, role = gameRole(g); if (!role || g.turn !== role || g.last === me.uid) continue;
+    if (!m.game || m.game.over) continue;
+    const g = m.game;
+    if (isMulti(g)) { if (!g.started || turnUid(g) !== me.uid || g.last === me.uid) continue; }
+    else { if (!g.o) continue; const role = gameRole(g); if (!role || g.turn !== role || g.last === me.uid) continue; }
     const key = m.id + ':' + (g.t || 0);
     if (gameTurnSeen.has(key)) continue; gameTurnSeen.set(key, 1);
     if (!drewOnce || openGame === m.id) continue;
@@ -3468,6 +3556,146 @@ function gameNudges() {
     toast(`${G.icon} Your move in ${G.name}!`, () => showGame(m.id), 'Play');
   }
 }
+
+/* ================= multiplayer games: UNO & Candy Land ================= */
+const shuffle = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+const arr = v => Array.isArray(v) ? v : Object.values(v || {});
+const UNO_COLORS = { R: '#e53935', G: '#43a047', B: '#1e88e5', Y: '#fdd835' };
+const UNO_NAMES = { R: 'red', G: 'green', B: 'blue', Y: 'yellow' };
+function unoDeck() {
+  const d = [];
+  for (const c of 'RGBY') { d.push(c + '0'); for (let n = 1; n <= 9; n++) d.push(c + n, c + n); d.push(c + 'S', c + 'S', c + 'R', c + 'R', c + 'D', c + 'D'); }
+  for (let i = 0; i < 4; i++) d.push('W', 'W4');
+  return shuffle(d);
+}
+const unoLabel = c => c === 'W' ? 'Wild' : c === 'W4' ? '+4' : c[1] === 'S' ? '⊘' : c[1] === 'R' ? '⇄' : c[1] === 'D' ? '+2' : c[1];
+const unoIsWild = c => c === 'W' || c === 'W4';
+function unoPlayable(card, top, color) { if (unoIsWild(card)) return true; return card[0] === color || card[1] === top[1]; }
+
+GAMES.uno = {
+  name: 'UNO', icon: '🃏', multi: { min: 2, max: 6 },
+  init: () => ({ phase: 'lobby' }),
+  start(g) {
+    const deck = unoDeck(), hands = {};
+    for (const p of g.pl) hands[p.uid] = deck.splice(0, 7);
+    let top; do { top = deck.shift(); if (unoIsWild(top)) deck.push(top); } while (unoIsWild(top));
+    return { phase: 'play', deck, disc: [top], hands, color: top[0], dir: 1, drew: '', uno: {}, catchable: '', log: `Game on! Top card is ${UNO_NAMES[top[0]]} ${unoLabel(top)}.` };
+  },
+  render(g, uid) {
+    const s = g.s; if (s.phase !== 'play' && !g.over) return '';
+    const hands = s.hands || {}, top = arr(s.disc).slice(-1)[0] || 'W', my = arr(hands[uid] || []), mine = !g.over && g.pl[g.ti].uid === uid;
+    const canPlay = mine && !s.pickColor;
+    const card = (c, on) => `<button class="ucard c${unoIsWild(c) ? 'W' : c[0]}${on ? ' can' : ''}" ${on ? `data-act='{"play":"${c}"}'` : 'disabled'}><span>${unoLabel(c)}</span></button>`;
+    const others = g.pl.filter(p => p.uid !== uid).map((p, i) => { const n = arr(hands[p.uid] || []).length; const cur = !g.over && g.pl[g.ti].uid === p.uid; return `<div class="uopp${cur ? ' cur' : ''}${n === 1 ? ' uno' : ''}"><b>${esc(p.name)}</b><span>${n} card${n === 1 ? '' : 's'}</span>${s.catchable === p.uid && uid !== p.uid ? `<button class="ucatch" data-act='{"catch":"${p.uid}"}'>Catch! 🚨</button>` : ''}</div>`; }).join('');
+    const pick = s.pickColor === uid ? `<div class="upick"><b>Pick a color</b>${'RGBY'.split('').map(c => `<button style="background:${UNO_COLORS[c]}" data-act='{"color":"${c}"}' aria-label="${UNO_NAMES[c]}"></button>`).join('')}</div>` : '';
+    const drewCard = mine && s.drew && my.includes(s.drew) ? `<p class="ghint">You drew ${UNO_NAMES[s.drew[0]] || 'a'} ${unoLabel(s.drew)}${unoPlayable(s.drew, top, s.color) ? ' — you can play it or pass.' : ' — no play, tap Pass.'}</p>` : '';
+    return `<div class="uopps">${others}</div>
+      <div class="utable"><div class="ucard c${unoIsWild(top) ? 'W' : top[0]} big"><span>${unoLabel(top)}</span></div><div class="ucolor" style="background:${UNO_COLORS[s.color]}">${UNO_NAMES[s.color]}${s.dir < 0 ? ' · ⇄ reversed' : ''}</div>
+        <button class="udraw" ${canPlay && !s.drew ? `data-act='{"draw":1}'` : 'disabled'}>Draw<small>${arr(s.deck).length}</small></button></div>
+      ${pick}${drewCard}<p class="ghint">${esc(s.log || '')}</p>
+      <div class="uhand">${my.map(c => card(c, canPlay && unoPlayable(c, top, s.color) && (!s.drew || c === s.drew))).join('')}</div>
+      <div class="duo">${mine && s.drew && !s.pickColor ? `<button data-act='{"pass":1}'>Pass</button>` : ''}${my.length <= 2 && !s.uno[uid] && !g.over ? `<button class="primary" data-act='{"uno":1}'>UNO!</button>` : ''}</div>`;
+  },
+  anytime: a => a.catch != null || a.uno != null,
+  act(g, a, uid) {
+    const s = JSON.parse(JSON.stringify(g.s)); s.hands = s.hands || {}; s.uno = s.uno || {};
+    const hand = arr(s.hands[uid] || []); s.deck = arr(s.deck); s.disc = arr(s.disc);
+    const n = g.pl.length, meIdx = g.pl.findIndex(p => p.uid === uid), name = (g.pl[meIdx] || {}).name;
+    const next = (from, steps) => (from + s.dir * steps + n * 10) % n;
+    const draw = (who, k) => { const h = arr(s.hands[who] || []); for (let i = 0; i < k; i++) { if (!s.deck.length) { const top = s.disc.pop(); s.deck = shuffle(s.disc); s.disc = [top]; } if (s.deck.length) h.push(s.deck.shift()); } s.hands[who] = h; };
+    if (a.uno) { if (hand.length > 2) return { error: 'UNO is for when you are down to your last cards.' }; s.uno[uid] = true; if (s.catchable === uid) s.catchable = ''; s.log = `${name} says UNO!`; return { s, ti: g.ti, snd: 'swish' }; }
+    if (a.catch) { if (s.catchable !== a.catch || a.catch === uid) return { error: 'Too late.' }; draw(a.catch, 2); s.catchable = ''; const victim = (g.pl.find(p => p.uid === a.catch) || {}).name; s.log = `${name} caught ${victim} without saying UNO — +2 cards!`; return { s, ti: g.ti, snd: 'capture' }; }
+    if (g.pl[g.ti].uid !== uid) return { error: 'Not your turn.' };
+    if (a.color) { if (s.pickColor !== uid) return null; s.color = a.color; s.pickColor = ''; const eff = s.after || {}; s.after = null; s.log = `${name} picked ${UNO_NAMES[a.color]}.`; return this.finishTurn(g, s, uid, eff); }
+    if (s.pickColor) return { error: 'Pick a color first.' };
+    if (a.draw) { if (s.drew) return { error: 'You already drew.' }; draw(uid, 1); s.drew = arr(s.hands[uid]).slice(-1)[0]; s.log = `${name} drew a card.`; return { s, ti: g.ti, snd: 'place' }; }
+    if (a.pass) { if (!s.drew) return { error: 'Draw first.' }; s.drew = ''; return { s, ti: next(g.ti, 1), snd: 'place', note: '' }; }
+    if (a.play) {
+      const c = a.play, top = s.disc.slice(-1)[0], i = hand.indexOf(c);
+      if (i < 0) return { error: "That card isn't in your hand." };
+      if (!unoPlayable(c, top, s.color)) return { error: `Needs ${UNO_NAMES[s.color]} or a ${unoLabel(top)}.` };
+      if (s.drew && c !== s.drew) return { error: 'After drawing you can only play the card you drew.' };
+      hand.splice(i, 1); s.hands[uid] = hand; s.disc.push(c); s.drew = '';
+      const eff = {};
+      if (unoIsWild(c)) { s.pickColor = uid; s.after = { skip: 0, draw: c === 'W4' ? 4 : 0 }; s.log = `${name} played ${unoLabel(c)}.`; if (!hand.length) { s.pickColor = ''; s.after = null; return { s, ti: g.ti, over: { winner: uid, name }, snd: 'win' }; } return { s, ti: g.ti, snd: 'place' }; }
+      s.color = c[0];
+      if (c[1] === 'S') eff.skip = 1; else if (c[1] === 'R') { s.dir = -s.dir; if (n === 2) eff.skip = 1; } else if (c[1] === 'D') eff.draw = 2;
+      s.log = `${name} played ${UNO_NAMES[c[0]]} ${unoLabel(c)}.`;
+      if (!hand.length) return { s, ti: g.ti, over: { winner: uid, name }, snd: 'win' };
+      if (hand.length === 1 && !s.uno[uid]) s.catchable = uid; else if (hand.length > 1) { s.uno[uid] = false; }
+      return this.finishTurn(g, s, uid, eff);
+    }
+    return null;
+  },
+  finishTurn(g, s, uid, eff) {
+    const n = g.pl.length, cur = g.pl.findIndex(p => p.uid === uid), next = (from, steps) => (from + s.dir * steps + n * 10) % n;
+    let ti = next(cur, 1);
+    if (eff.draw) { const victim = g.pl[ti]; const h = arr(s.hands[victim.uid] || []); s.deck = arr(s.deck); s.disc = arr(s.disc);
+      for (let i = 0; i < eff.draw; i++) { if (!s.deck.length) { const top = s.disc.pop(); s.deck = shuffle(s.disc); s.disc = [top]; } if (s.deck.length) h.push(s.deck.shift()); }
+      s.hands[victim.uid] = h; s.uno[victim.uid] = false; s.log += ` ${victim.name} draws ${eff.draw} and loses a turn.`; ti = next(ti, 1); }
+    else if (eff.skip) { s.log += ` ${g.pl[ti].name} is skipped.`; ti = next(ti, 1); }
+    return { s, ti, snd: eff.draw ? 'capture' : 'place' };
+  }
+};
+
+/* ---- Candy Land ---- */
+const CL_COLORS = ['#e53935', '#8e24aa', '#fdd835', '#1e88e5', '#fb8c00', '#43a047'];
+const CL_NAMES = ['red', 'purple', 'yellow', 'blue', 'orange', 'green'];
+const CL_LEN = 96; // spaces 0..95, 95 = castle
+const CL_CANDY = { 9: ['🍬', 'Peppermint'], 20: ['🍭', 'Lollipop'], 33: ['🍩', 'Donut'], 42: ['🍦', 'Ice Cream'], 58: ['🍫', 'Chocolate'] };
+const CL_LICORICE = new Set([30, 60]);          // lose a turn
+const CL_SHORTCUT = { 4: 27, 34: 45 };           // rainbow trail, gumdrop pass
+const CL_TOKENS = ['🟥', '🟦', '🟩', '🟨'];
+function clDeck() {
+  const d = [];
+  for (let c = 0; c < 6; c++) { for (let i = 0; i < 6; i++) d.push('c' + c); for (let i = 0; i < 2; i++) d.push('d' + c); }
+  for (const k of Object.keys(CL_CANDY)) d.push('k' + k);
+  return shuffle(d);
+}
+GAMES.candy = {
+  name: 'Candy Land', icon: '🍭', multi: { min: 2, max: 4 },
+  init: () => ({ phase: 'lobby' }),
+  start(g) { const pos = {}; g.pl.forEach(p => pos[p.uid] = -1); return { phase: 'play', deck: clDeck(), pos, skip: {}, last: '', log: 'Draw a card to start down the trail!' }; },
+  render(g, uid) {
+    const s = g.s; if (s.phase !== 'play' && !g.over) return '';
+    const pos = s.pos || {}, mine = !g.over && g.pl[g.ti].uid === uid;
+    // snake the trail through a 12-wide grid
+    let cells = [];
+    for (let i = 0; i < CL_LEN; i++) {
+      const row = Math.floor(i / 12), col = row % 2 === 0 ? i % 12 : 11 - i % 12;
+      const here = g.pl.map((p, k) => pos[p.uid] === i ? `<i title="${esc(p.name)}">${CL_TOKENS[k]}</i>` : '').join('');
+      const candy = CL_CANDY[i], lic = CL_LICORICE.has(i), sc = CL_SHORTCUT[i];
+      cells.push({ i, row, col, html: `<div class="clc${i === CL_LEN - 1 ? ' castle' : ''}${lic ? ' lic' : ''}" style="grid-row:${row + 1};grid-column:${col + 1};background:${i === CL_LEN - 1 ? '#f48fb1' : candy ? '#f8bbd0' : CL_COLORS[i % 6]}">${candy ? candy[0] : sc ? '🌈' : lic ? '🪢' : i === CL_LEN - 1 ? '🏰' : ''}${here}</div>` });
+    }
+    const start = g.pl.map((p, k) => pos[p.uid] === -1 ? CL_TOKENS[k] : '').join('');
+    const lastCard = s.last ? this.cardHTML(s.last) : '';
+    const legend = g.pl.map((p, k) => `<span class="cll${!g.over && g.pl[g.ti].uid === p.uid ? ' cur' : ''}">${CL_TOKENS[k]} ${esc(p.name)}${(s.skip || {})[p.uid] ? ' 🪢' : ''}</span>`).join('');
+    return `<div class="cllegend">${legend}</div><div class="clboard">${cells.map(c => c.html).join('')}</div><div class="clstart">Start ${start}</div>
+      <div class="cltable">${lastCard}<button class="cldraw" ${mine ? `data-act='{"draw":1}'` : 'disabled'}>${mine ? 'Draw a card' : `${esc(g.pl[g.ti].name)}'s turn`}<small>${arr(s.deck).length} left</small></button></div><p class="ghint">${esc(s.log || '')}</p>`;
+  },
+  cardHTML(c) {
+    if (c[0] === 'k') { const k = CL_CANDY[c.slice(1)]; return `<div class="clcard" style="background:#f8bbd0"><span>${k[0]}</span><small>${k[1]}</small></div>`; }
+    const col = +c[1], dbl = c[0] === 'd';
+    return `<div class="clcard" style="background:${CL_COLORS[col]}"><span>${dbl ? '■ ■' : '■'}</span><small>${dbl ? 'double ' : ''}${CL_NAMES[col]}</small></div>`;
+  },
+  act(g, a, uid) {
+    if (g.pl[g.ti].uid !== uid) return { error: 'Not your turn.' };
+    if (!a.draw) return null;
+    const s = JSON.parse(JSON.stringify(g.s)); s.deck = arr(s.deck); s.pos = s.pos || {}; s.skip = s.skip || {};
+    const n = g.pl.length, name = g.pl[g.ti].name;
+    if (s.skip[uid]) { s.skip[uid] = false; s.log = `${name} is stuck in the licorice — skip a turn.`; return { s, ti: (g.ti + 1) % n, snd: 'miss' }; }
+    if (!s.deck.length) s.deck = clDeck();
+    const c = s.deck.shift(); s.last = c;
+    let p = s.pos[uid] == null ? -1 : s.pos[uid];
+    if (c[0] === 'k') { p = +c.slice(1); s.log = `${name} drew ${CL_CANDY[p][1]} and jumps to it!`; }
+    else { const col = +c[1], times = c[0] === 'd' ? 2 : 1; for (let t = 0; t < times; t++) { p++; while (p < CL_LEN - 1 && p % 6 !== col) p++; } s.log = `${name} drew ${c[0] === 'd' ? 'double ' : ''}${CL_NAMES[col]} and ${p >= CL_LEN - 1 ? 'reaches the castle! 🏰' : 'moves to ' + (p + 1) + '.'}`; }
+    if (p >= CL_LEN - 1) { p = CL_LEN - 1; s.pos[uid] = p; return { s, ti: g.ti, over: { winner: uid, name }, snd: 'win' }; }
+    if (CL_SHORTCUT[p] != null) { s.log += ` Shortcut! Zooms to ${CL_SHORTCUT[p] + 1}.`; p = CL_SHORTCUT[p]; }
+    if (CL_LICORICE.has(p)) { s.skip[uid] = true; s.log += ' Stuck in licorice — loses next turn.'; }
+    s.pos[uid] = p;
+    return { s, ti: (g.ti + 1) % n, snd: c[0] === 'k' ? 'swish' : 'place' };
+  }
+};
 
 /* ================= Pingo — the AI bot ================= */
 const BOT = { uid: 'pingo', name: 'Pingo', hue: 200 };
