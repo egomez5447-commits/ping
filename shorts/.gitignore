@@ -1,0 +1,9 @@
+models
+fonts
+*.work/
+*.words.json
+__pycache__/
+*.mp4
+*.mov
+*.mkv
+*.webm

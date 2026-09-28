@@ -1,0 +1,6 @@
+numpy
+scipy
+opencv-python-headless>=4.8
+mediapipe>=0.10.14
+sherpa-onnx>=1.10
+imageio-ffmpeg   # ffmpeg with libass, if the system ffmpeg lacks it
