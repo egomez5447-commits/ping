@@ -1,0 +1,108 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Build Royale</title>
+<style>
+  :root { --ui:#fff; --accent:#ffd93b; --hp:#5be36a; --shield:#4db8ff; }
+  * { box-sizing:border-box; user-select:none; -webkit-user-select:none; }
+  html,body { margin:0; height:100%; overflow:hidden; background:#0b1020; font-family:"Segoe UI",Arial,sans-serif; color:var(--ui); }
+  canvas#view { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  .hud { position:fixed; pointer-events:none; text-shadow:0 2px 4px rgba(0,0,0,.7); }
+  #crosshair { left:50%; top:50%; width:14px; height:14px; margin:-7px 0 0 -7px; border:2px solid rgba(255,255,255,.85); border-radius:50%; transition:width .05s,height .05s,margin .05s; }
+  #crosshair::after { content:""; position:absolute; left:50%; top:50%; width:3px; height:3px; margin:-1.5px; background:#fff; border-radius:50%; }
+  #crosshair.hit { border-color:#fff; box-shadow:0 0 0 2px #fff; }
+  #crosshair.kill { border-color:#ff4646; box-shadow:0 0 0 3px #ff4646; }
+  #crosshair.hidden { opacity:0; }
+  #vitals { left:20px; bottom:20px; width:300px; }
+  .bar { height:18px; margin-top:6px; background:rgba(0,0,0,.55); border:2px solid rgba(0,0,0,.6); transform:skewX(-12deg); position:relative; overflow:hidden; }
+  .bar > i { position:absolute; left:0; top:0; bottom:0; width:100%; transition:width .12s; }
+  .bar b { position:absolute; right:8px; top:-2px; font-size:13px; transform:skewX(12deg); }
+  #shieldbar > i { background:linear-gradient(#7fd0ff,#2c8fe0); }
+  #hpbar > i { background:linear-gradient(#8bf59a,#2fb84a); }
+  #hotbar { left:50%; bottom:18px; transform:translateX(-50%); display:flex; gap:6px; }
+  .slot { width:64px; height:64px; background:rgba(15,20,40,.6); border:2px solid rgba(255,255,255,.25); position:relative; display:flex; align-items:center; justify-content:center; font-size:11px; text-align:center; font-weight:700; }
+  .slot .k { position:absolute; left:4px; top:2px; font-size:12px; opacity:.85; }
+  .slot .n { padding:0 3px; }
+  .slot.sel { border-color:var(--accent); background:rgba(255,217,59,.25); box-shadow:0 0 12px rgba(255,217,59,.6); transform:translateY(-6px); }
+  .slot.off { opacity:.35; }
+  .slot.sep { margin-left:14px; }
+  #resources { right:20px; bottom:20px; text-align:right; font-size:20px; font-weight:800; line-height:1.4; }
+  #ammo { font-size:34px; }
+  #ammo small { font-size:18px; opacity:.8; }
+  #topleft { left:20px; top:16px; font-size:18px; font-weight:800; line-height:1.5; }
+  #topleft span { background:rgba(0,0,0,.45); padding:2px 10px; border-radius:4px; }
+  #minimap { right:16px; top:16px; width:176px; height:176px; border:3px solid rgba(255,255,255,.8); border-radius:6px; background:#123; }
+  #storm { left:50%; top:14px; transform:translateX(-50%); text-align:center; font-size:16px; font-weight:800; background:rgba(60,20,110,.75); border:2px solid #b35cff; border-radius:6px; padding:5px 16px; }
+  #feed { right:16px; top:204px; width:280px; text-align:right; font-size:14px; font-weight:700; }
+  #feed div { background:rgba(0,0,0,.5); margin-bottom:4px; padding:3px 8px; border-radius:4px; animation:fade 5s forwards; }
+  @keyframes fade { 0%,80% { opacity:1 } 100% { opacity:0 } }
+  #toast { left:50%; top:22%; transform:translateX(-50%); font-size:24px; font-weight:800; color:var(--accent); opacity:0; transition:opacity .3s; text-align:center; }
+  #toast.show { opacity:1; }
+  #prompt { left:50%; top:62%; transform:translateX(-50%); font-size:20px; font-weight:800; background:rgba(0,0,0,.55); padding:6px 16px; border-radius:6px; display:none; }
+  #hint { left:50%; top:78%; transform:translateX(-50%); font-size:18px; font-weight:700; text-align:center; opacity:.9; }
+  #dmg { position:fixed; inset:0; pointer-events:none; box-shadow:inset 0 0 140px 30px rgba(255,0,0,.75); opacity:0; transition:opacity .35s; }
+  #dmg.on { opacity:1; transition:none; }
+  #stormfx { position:fixed; inset:0; pointer-events:none; background:radial-gradient(ellipse at center, rgba(120,40,220,.05), rgba(120,40,220,.5)); opacity:0; transition:opacity .4s; }
+  #stormfx.on { opacity:1; }
+  .overlay { position:fixed; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; text-align:center; background:radial-gradient(ellipse at center, rgba(30,50,110,.85), rgba(5,8,20,.96)); z-index:10; }
+  .overlay.hidden { display:none; }
+  .overlay h1 { font-size:clamp(44px,9vw,96px); margin:0; font-style:italic; letter-spacing:2px; background:linear-gradient(#fff,#ffd93b 60%,#ff9d2e); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 6px 0 rgba(0,0,0,.4)); }
+  .overlay h2 { font-weight:600; margin:6px 0 20px; opacity:.85; }
+  .overlay button { font-size:28px; font-weight:900; font-style:italic; padding:14px 46px; border:0; cursor:pointer; color:#1a1400; background:linear-gradient(#ffe45c,#ffb400); border-radius:6px; transform:skewX(-8deg); box-shadow:0 6px 0 #a06a00; }
+  .overlay button:hover { filter:brightness(1.1); }
+  .controls { display:grid; grid-template-columns:auto auto; gap:4px 22px; margin:22px 0 26px; font-size:15px; text-align:left; opacity:.92; }
+  .controls b { color:var(--accent); }
+  .fine { font-size:12px; opacity:.55; margin-top:22px; max-width:520px; }
+  #endstats { font-size:22px; margin:8px 0 22px; }
+</style>
+</head>
+<body>
+<canvas id="view"></canvas>
+<div id="stormfx"></div>
+<div id="dmg"></div>
+
+<div class="hud" id="crosshair"></div>
+<div class="hud" id="topleft"><span id="alive">Players left: 0</span><br><span id="kills">Eliminations: 0</span></div>
+<div class="hud" id="storm">STORM</div>
+<canvas class="hud" id="minimap" width="176" height="176"></canvas>
+<div class="hud" id="feed"></div>
+<div class="hud" id="toast"></div>
+<div class="hud" id="prompt"></div>
+<div class="hud" id="hint"></div>
+<div class="hud" id="vitals">
+  <div class="bar" id="shieldbar"><i></i><b>0</b></div>
+  <div class="bar" id="hpbar"><i></i><b>100</b></div>
+</div>
+<div class="hud" id="hotbar"></div>
+<div class="hud" id="resources"><div id="ammo"></div><div id="wood">Wood 0</div></div>
+
+<div class="overlay" id="menu">
+  <h1>BUILD ROYALE</h1>
+  <h2>Drop in. Build up. Be the last one standing.</h2>
+  <button id="start">DROP IN</button>
+  <div class="controls">
+    <div><b>WASD</b> move</div><div><b>Shift</b> sprint</div>
+    <div><b>Space</b> jump / open glider</div><div><b>Mouse</b> aim</div>
+    <div><b>LMB</b> fire / swing / place</div><div><b>RMB</b> aim down sights</div>
+    <div><b>1 2 3</b> pickaxe / rifle / shotgun</div><div><b>R</b> reload</div>
+    <div><b>Z X C</b> wall / floor / ramp</div><div><b>Q</b> toggle build mode</div>
+    <div><b>E</b> open chests</div><div><b>Look up</b> + floor = ceiling</div>
+  </div>
+  <div class="fine">Fan-made tribute game. Not affiliated with or endorsed by Epic Games.</div>
+</div>
+<div class="overlay hidden" id="pause">
+  <h1 style="font-size:64px">PAUSED</h1>
+  <h2>Click to resume</h2>
+</div>
+<div class="overlay hidden" id="end">
+  <h1 id="endtitle">ELIMINATED</h1>
+  <h2 id="endsub"></h2>
+  <div id="endstats"></div>
+  <button id="again">PLAY AGAIN</button>
+</div>
+
+<script type="module" src="game.js"></script>
+</body>
+</html>
