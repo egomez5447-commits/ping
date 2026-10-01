@@ -1,0 +1,6 @@
+assets/
+audio/
+*.mp4
+*.srt
+__pycache__/
+.venv/

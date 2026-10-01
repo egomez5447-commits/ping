@@ -1,0 +1,4 @@
+pillow
+imageio-ffmpeg
+kokoro
+soundfile
